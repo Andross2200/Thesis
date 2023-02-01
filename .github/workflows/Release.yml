@@ -33,7 +33,7 @@ jobs:
           toolchain: stable
           components: clippy, rustfmt
       - name: Install cargo-edit
-        run: sudo cargo install cargo-edit
+        run: cargo install cargo-edit
       - uses: 8BitJonny/gh-get-current-pr@2.2.0
         id: PR
         with:
