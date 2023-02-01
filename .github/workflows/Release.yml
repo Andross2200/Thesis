@@ -2,7 +2,8 @@ name: Build and Test
 
 # When should this Github Action run?
 on:
-  push
+  pull_request:
+    branches: [main]
 
 # What Environment variables to use? It is possible to have secret environment variables, any defined here will be in plaintext though.
 env:
