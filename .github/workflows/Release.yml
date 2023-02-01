@@ -15,48 +15,48 @@ jobs:
 
   steps:
     - name: Install Packages
-        run: sudo apt update && sudo apt install libasound2-dev libudev-dev pkg-config jq
-      # Predefined GitHub action that is available globally
-      # This is supposed to cache the install
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      # Checkout the code so that we can use it
-      - uses: actions/checkout@v2
-      # Install rust and add features to rust for later usage
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: clippy, rustfmt
-      - name: Install cargo-edit
-        run: sudo cargo install cargo-edit
-      - uses: 8BitJonny/gh-get-current-pr@2.2.0
-        id: PR
-        with:
-          # Authetication token to access GitHub APIs. (Can be omitted by default.)
-          github-token: ${{ github.token }}
-          # Verbose setting SHA when using Pull_Request event trigger to fix #16. (For push even trigger this is not necessary.)
-          sha: ${{ github.event.pull_request.head.sha }}
-          # Only return if PR is still open. (By default it returns PRs in any state.)
-          filterOutClosed: true
-          # Only return if PR is not in draft state. (By default it returns PRs in any state.)
-          filterOutDraft: true
-      - name: Get version from PR body
-        id: version
-        run: echo "VERSION=$({{steps.PR.outputs.pr_body}}" | grep -o -e "(major|minor|patch))" >> $GITHUB_OUTPUT
-      - name: Bump version based on PR body
-        run: cargo set-version --bump "{{steps.version.outputs.VERSION}}"
-      - name: Get release version
-        id: PV
-        run: echo "VERSION=$(cargo metadata --no-deps --format-version=1 | jq "package.version")" >> $GITHUB_OUTPUT
-      - name: Create new release
-        uses: marvinpinto/action-automatic-releases@latest
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
-          prerelease: true
-          title: "{{steps.PV.outputs.VERSION}}"
+      run: sudo apt update && sudo apt install libasound2-dev libudev-dev pkg-config jq
+    # Predefined GitHub action that is available globally
+    # This is supposed to cache the install
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    # Checkout the code so that we can use it
+    - uses: actions/checkout@v2
+    # Install rust and add features to rust for later usage
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: clippy, rustfmt
+    - name: Install cargo-edit
+      run: sudo cargo install cargo-edit
+    - uses: 8BitJonny/gh-get-current-pr@2.2.0
+      id: PR
+      with:
+        # Authetication token to access GitHub APIs. (Can be omitted by default.)
+        github-token: ${{ github.token }}
+        # Verbose setting SHA when using Pull_Request event trigger to fix #16. (For push even trigger this is not necessary.)
+        sha: ${{ github.event.pull_request.head.sha }}
+        # Only return if PR is still open. (By default it returns PRs in any state.)
+        filterOutClosed: true
+        # Only return if PR is not in draft state. (By default it returns PRs in any state.)
+        filterOutDraft: true
+    - name: Get version from PR body
+      id: version
+      run: echo "VERSION=$({{steps.PR.outputs.pr_body}}" | grep -o -e "(major|minor|patch))" >> $GITHUB_OUTPUT
+    - name: Bump version based on PR body
+      run: cargo set-version --bump "{{steps.version.outputs.VERSION}}"
+    - name: Get release version
+      id: PV
+      run: echo "VERSION=$(cargo metadata --no-deps --format-version=1 | jq "package.version")" >> $GITHUB_OUTPUT
+    - name: Create new release
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "{{steps.PV.outputs.VERSION}}"
