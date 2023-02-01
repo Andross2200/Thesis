@@ -48,7 +48,7 @@ jobs:
           filterOutDraft: true
       - name: Get version from PR body
         id: version
-        run: echo "{{steps.PR.outputs.pr_body}}" | awk '{print $NF}' >> $GITHUB_OUTPUT
+        run: $VAR = $(echo "{{steps.PR.outputs.pr_body}}" | awk '{print $NF}') && echo $VAR >> $GITHUB_OUTPUT
       - name: Bump version based on PR body
         run: cargo set-version --bump "{{steps.version.outputs.VERSION}}"
       - name: Get release version
