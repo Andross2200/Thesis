@@ -1,9 +1,11 @@
 use bevy::prelude::*;
 
 mod view;
+mod model;
 
 use view::GameState;
 use view::game_view::game_view_plugin::GameViewPlugin;
+use model::game_model::game::*;
 
 fn main() {
     App::new()
@@ -18,6 +20,6 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
 }
