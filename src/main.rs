@@ -4,7 +4,7 @@ mod view;
 mod model;
 
 use view::GameState;
-use view::game_view::game_view_plugin::GameViewPlugin;
+use view::game_view::game_view_plugin::{GameViewPlugin, mouse_scroll};
 use model::game_model::game::*;
 
 fn main() {
@@ -17,6 +17,7 @@ fn main() {
         .add_startup_system(setup)
         .add_state(GameState::Game)
         .add_plugin(GameViewPlugin)
+        .add_system(mouse_scroll)
         .run();
 }
 
