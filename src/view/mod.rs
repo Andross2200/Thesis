@@ -4,8 +4,6 @@ pub mod game_view;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum GameState {
-    MainMenu,
-    LevelSelector,
     Game,
 }
 

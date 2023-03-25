@@ -1,11 +1,10 @@
 use bevy::prelude::*;
 
-mod view;
 mod model;
+mod view;
 
+use view::game_view::game_view_plugin::{mouse_scroll, GameViewPlugin};
 use view::GameState;
-use view::game_view::game_view_plugin::{GameViewPlugin, mouse_scroll};
-use model::game_model::game::*;
 
 fn main() {
     App::new()
@@ -21,6 +20,6 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
