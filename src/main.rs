@@ -3,7 +3,7 @@ use bevy::prelude::*;
 mod model;
 mod view;
 
-use view::game_view::game_view_plugin::{mouse_scroll, GameViewPlugin};
+use view::game_view::game_view_plugin::GameViewPlugin;
 use view::GameState;
 use model::game_model::game::*;
 use view::game_view::image_handler::ImageHandlerPlugin;
