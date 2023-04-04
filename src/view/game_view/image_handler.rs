@@ -4,7 +4,7 @@ use std::collections::HashMap;
 pub struct ImageHandlerPlugin;
 
 #[derive(Resource)]
-pub struct ImageMap(pub HashMap<String, UiImage>, pub Vec<UiImage>);
+pub struct ImageMap(pub HashMap<String, UiImage>, pub Vec<UiImage>, pub Vec<Handle<Font>>);
 
 impl Plugin for ImageHandlerPlugin {
     fn build(&self, app: &mut App) {
@@ -109,5 +109,9 @@ fn load_images(mut commands: Commands, asset_server: Res<AssetServer>) {
     buttons.push(UiImage(asset_server.load("buttons/pause.png")));
     buttons.push(UiImage(asset_server.load("buttons/stop.png")));
 
-    commands.insert_resource(ImageMap(image_map, buttons));
+    // Fonts
+    let mut fonts: Vec<Handle<Font>> = Vec::new();
+    fonts.push(asset_server.load("fonts/NotoSans-Regular.ttf"));
+
+    commands.insert_resource(ImageMap(image_map, buttons, fonts));
 }

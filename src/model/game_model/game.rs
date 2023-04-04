@@ -11,6 +11,7 @@ pub struct LevelCell {
     pub image_size_y: f32,
     pub extra_move_x: f32,
     pub extra_move_y: f32,
+    pub cell_entity: Option<Entity>
 }
 
 #[derive(Resource)]
@@ -19,6 +20,25 @@ pub struct Game {
     pub fen: String,
     pub rows: u32,
     pub columns: u32,
+    pub collected_perls: u32,
+    pub required_perls: u32,
+    pub puzzle: Vec<Entity>
+}
+
+impl Default for Game {
+    fn default() -> Self {
+        Game::init_from_fen("5 5 ZZZZZ/Z1C1Z/Z1Z1Z/Z1CPZ/ZZZZZ".to_string())
+    }
+}
+
+impl Game {
+    pub fn increment_per_counter(&mut self) {
+        self.collected_perls += 1;
+    }
+
+    pub fn decrement_perl_counter(&mut self) {
+        self.collected_perls -= 1;
+    }
 }
 
 impl Game {
@@ -419,7 +439,7 @@ impl Game {
                     matrix.set(
                         i.try_into().unwrap(),
                         col_counter.try_into().unwrap(),
-                        cell.clone(),
+                        cell,
                     );
                     col_counter += 1;
                 } else if c.is_numeric() {
@@ -441,6 +461,9 @@ impl Game {
             fen,
             rows: num_of_rows,
             columns: num_of_columns,
+            collected_perls: 0,
+            required_perls: 0,
+            puzzle: Vec::new()
         }
     }
 }
@@ -460,5 +483,6 @@ fn create_level_cell(
         image_size_y: image_size_y,
         extra_move_x: extra_move_x,
         extra_move_y: extra_move_y,
+        cell_entity: None
     }
 }

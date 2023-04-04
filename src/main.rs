@@ -2,10 +2,10 @@ use bevy::prelude::*;
 
 mod model;
 mod view;
+mod utilities;
 
 use view::game_view::game_view_plugin::GameViewPlugin;
 use view::GameState;
-use model::game_model::game::*;
 use view::game_view::image_handler::ImageHandlerPlugin;
 
 const MAX_LEVEL_WIDTH: f32 = 500.0;
@@ -24,7 +24,6 @@ fn main() {
         .add_state(GameState::Game)
         .add_plugin(ImageHandlerPlugin)
         .add_plugin(GameViewPlugin)
-        .insert_resource(Game::init_from_fen("5 10 ZQWERTYUIA/SDFGHJKzxc/vqwertyuia/sdfghjkbnm/lBNpPXoOCV".to_string()))
         .run();
 }
 

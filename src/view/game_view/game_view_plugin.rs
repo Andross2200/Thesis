@@ -1,3 +1,5 @@
+use crate::{utilities::script_plugin::{ScriptRes, ScriptRunStatus, ScriptPlugin, reset_level}, model::game_model::game::Game};
+
 use super::{despawn_screen, GameState, level_view::LevelControlButtonType};
 use bevy::{
     input::mouse::{MouseScrollUnit, MouseWheel},
@@ -19,7 +21,9 @@ impl Plugin for GameViewPlugin {
             .add_system_set(
                 SystemSet::on_exit(GameState::Game).with_system(despawn_screen::<GameViewScreen>),
             )
+            .init_resource::<Game>()
             .add_plugin(LevelViewPlugin)
+            .add_plugin(ScriptPlugin)
             .add_system(mouse_scroll)
             .add_system(level_control_button_system);
     }
@@ -250,7 +254,7 @@ fn game_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                     )
                     .with_text_alignment(TextAlignment::CENTER),));
                 });
-        });
+        }).insert(GameViewScreen);
 }
 
 #[derive(Component, Default)]
@@ -285,17 +289,27 @@ pub fn mouse_scroll(
 pub fn level_control_button_system(
     mut interaction_query: Query<
         (&Interaction, &LevelControlButtonType),
-        (Changed<Interaction>, With<Button>),
-    >,
+        (Changed<Interaction>, With<Button>)>,
+    mut script_res: ResMut<ScriptRes>
 ) {
     for (interaction, button_type) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => match *button_type {
-                LevelControlButtonType::Play => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::StepBack => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::StepForward => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::Pause => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::Stop => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
+                LevelControlButtonType::Play => {
+                    script_res.set_run_status(ScriptRunStatus::Running);
+                }
+                LevelControlButtonType::StepBack => {
+                    script_res.set_run_status(ScriptRunStatus::BackwardOnce);
+                }
+                LevelControlButtonType::StepForward => {
+                    script_res.set_run_status(ScriptRunStatus::ForwardOnce);
+                }
+                LevelControlButtonType::Pause => {
+                    script_res.set_run_status(ScriptRunStatus::Paused);
+                }
+                LevelControlButtonType::Stop => {
+                    reset_level(&mut script_res);
+                }
             },
             Interaction::Hovered => match *button_type {
                 LevelControlButtonType::Play => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
