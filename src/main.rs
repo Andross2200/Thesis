@@ -13,6 +13,9 @@ const MAX_LEVEL_HEIGHT: f32 = 550.0;
 const SHIFT_TO_RIGHT: f32 = 7.0;
 const SHIFT_DOWN: f32 = 20.0;
 
+#[derive(Component)]
+pub struct MainCamera;
+
 fn main() {
     App::new()
         // .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -28,5 +31,5 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn((Camera2dBundle::default(),MainCamera));
 }

@@ -7,7 +7,7 @@ use std::{
 use bevy::time::FixedTimestep;
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
-use crate::view::game_view::{image_handler::ImageMap, level_view::ScoreText};
+use crate::{view::game_view::{image_handler::ImageMap, level_view::ScoreText}, model::game_model::game::GameCompleted};
 use crate::{
     model::game_model::game::Game,
     view::game_view::level_view::{
@@ -142,7 +142,7 @@ pub fn run_script(
                     ) {
                         move_pawn(green_pawn, direction, image_size);
                     } else {
-                        reset_level(&mut script_res);
+                        reset_level(&mut script_res, &mut game);
                     }
                 }
                 "mgu" => {
@@ -159,7 +159,7 @@ pub fn run_script(
                     ) {
                         move_pawn(green_pawn, direction, image_size);
                     } else {
-                        reset_level(&mut script_res);
+                        reset_level(&mut script_res, &mut game);
                     }
                 }
                 "mgl" => {
@@ -176,7 +176,7 @@ pub fn run_script(
                     ) {
                         move_pawn(green_pawn, direction, image_size);
                     } else {
-                        reset_level(&mut script_res);
+                        reset_level(&mut script_res, &mut game);
                     }
                 }
                 "mgr" => {
@@ -193,7 +193,7 @@ pub fn run_script(
                     ) {
                         move_pawn(green_pawn, Direction::RIGHT, image_size);
                     } else {
-                        reset_level(&mut script_res);
+                        reset_level(&mut script_res, &mut game);
                     }
                 }
                 "cgp" => {
@@ -218,7 +218,7 @@ pub fn run_script(
                     ) {
                         move_pawn(orange_pawn, direction, image_size);
                     } else {
-                        reset_level(&mut script_res);
+                        reset_level(&mut script_res, &mut game);
                     }
                 }
                 "mou" => {
@@ -235,7 +235,7 @@ pub fn run_script(
                     ) {
                         move_pawn(orange_pawn, direction, image_size);
                     } else {
-                        reset_level(&mut script_res);
+                        reset_level(&mut script_res, &mut game);
                     }
                 }
                 "mol" => {
@@ -252,7 +252,7 @@ pub fn run_script(
                     ) {
                         move_pawn(orange_pawn, direction, image_size);
                     } else {
-                        reset_level(&mut script_res);
+                        reset_level(&mut script_res, &mut game);
                     }
                 }
                 "mor" => {
@@ -269,7 +269,7 @@ pub fn run_script(
                     ) {
                         move_pawn(orange_pawn, direction, image_size);
                     } else {
-                        reset_level(&mut script_res);
+                        reset_level(&mut script_res, &mut game);
                     }
                 }
                 "cop" => {
@@ -287,21 +287,29 @@ pub fn run_script(
             script_res.set_run_status(ScriptRunStatus::Paused);
         }
     }
+    for mut text in &mut score_text {
+        text.sections[1].value = format!("{}/{}", game.borrow().collected_perls, game.borrow().required_perls);
+    }
     if script_res.run_index >= script_res.script.len()
         && (script_res.run_status == ScriptRunStatus::Running
             || script_res.run_status == ScriptRunStatus::ForwardOnce
             || script_res.run_status == ScriptRunStatus::BackwardOnce)
     {
-        reset_level(script_res.borrow_mut());
-    }
-    for mut text in &mut score_text {
-        text.sections[1].value = format!("{}/{}", game.borrow().collected_perls, game.borrow().required_perls);
+        if game.collected_perls == game.required_perls {
+            game.game_completed = GameCompleted::Yes;
+            info!("Level Completed");
+            reset_level(script_res.borrow_mut(), game.borrow_mut())
+        } else {
+            reset_level(script_res.borrow_mut(), game.borrow_mut());
+            game.game_completed = GameCompleted::No;
+        }
     }
 }
 
-pub fn reset_level(script_res: &mut ResMut<ScriptRes>) {
+pub fn reset_level(script_res: &mut ResMut<ScriptRes>, game: &mut ResMut<Game>) {
     script_res.run_status = ScriptRunStatus::Reset;
     script_res.run_index = 0;
+    game.collected_perls = 0;
 }
 
 fn move_pawn(mut pawn: Mut<Style>, direction: Direction, image_size: f32) {

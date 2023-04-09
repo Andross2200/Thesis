@@ -293,43 +293,46 @@ fn create_info_panel(commands: &mut Commands, image_map: &ImageMap) -> Entity {
 
 fn level_control_button_system(
     mut interaction_query: Query<
-        (&Interaction, &LevelControlButtonType),
+        (&Interaction, &LevelControlButtonType, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>)>,
     mut script_res: ResMut<ScriptRes>,
+    mut game: ResMut<Game>
 ) {
-    for (interaction, button_type) in &mut interaction_query {
+    for (interaction, button_type, mut color) in &mut interaction_query {
         match *interaction {
-            Interaction::Clicked => match *button_type {
-                LevelControlButtonType::Play => {
-                    script_res.set_run_status(ScriptRunStatus::Running);
-                }
-                LevelControlButtonType::StepBack => {
-                    script_res.set_run_status(ScriptRunStatus::BackwardOnce);
-                }
-                LevelControlButtonType::StepForward => {
-                    script_res.set_run_status(ScriptRunStatus::ForwardOnce);
-                }
-                LevelControlButtonType::Pause => {
-                    script_res.set_run_status(ScriptRunStatus::Paused);
-                }
-                LevelControlButtonType::Stop => {
-                    reset_level(&mut script_res);
-                }
-            },
-            Interaction::Hovered => match *button_type {
-                LevelControlButtonType::Play => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::StepBack => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::StepForward => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::Pause => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::Stop => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-            },
-            Interaction::None => match *button_type {
-                LevelControlButtonType::Play => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::StepBack => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::StepForward => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::Pause => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                LevelControlButtonType::Stop => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-            },
+            Interaction::Clicked => {
+                match *button_type {
+                    LevelControlButtonType::Play => {
+                        script_res.set_run_status(ScriptRunStatus::Running);
+                    }
+                    LevelControlButtonType::StepBack => {
+                        script_res.set_run_status(ScriptRunStatus::BackwardOnce);
+                    }
+                    LevelControlButtonType::StepForward => {
+                        script_res.set_run_status(ScriptRunStatus::ForwardOnce);
+                    }
+                    LevelControlButtonType::Pause => {
+                        script_res.set_run_status(ScriptRunStatus::Paused);
+                    }
+                    LevelControlButtonType::Stop => {
+                        reset_level(&mut script_res, &mut game);
+                    }
+                };
+                *color = BackgroundColor(Color::YELLOW);
+            }
+            Interaction::Hovered => {
+                match *button_type {
+                    LevelControlButtonType::Play => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
+                    LevelControlButtonType::StepBack => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
+                    LevelControlButtonType::StepForward => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
+                    LevelControlButtonType::Pause => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
+                    LevelControlButtonType::Stop => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
+                };
+                *color = BackgroundColor(Color::AQUAMARINE);
+            }
+            Interaction::None => {
+                *color = BackgroundColor::default();
+            }
         }
     }
 }

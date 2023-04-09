@@ -1,7 +1,13 @@
-use crate::{MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH};
+use crate::{MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH, view::game_view::game_view_plugin::RedrawPuzzle};
 use bevy::prelude::*;
 use simple_matrix::Matrix;
 use std::{cmp::min, f32::consts::PI};
+
+#[derive(PartialEq, Eq)]
+pub enum GameCompleted {
+    Yes,
+    No
+}
 
 #[derive(Default, Clone, Copy)]
 pub struct LevelCell {
@@ -22,12 +28,15 @@ pub struct Game {
     pub columns: u32,
     pub collected_perls: u32,
     pub required_perls: u32,
-    pub puzzle: Vec<Entity>
+    pub puzzle: Vec<Entity>,
+    pub redraw_cond: RedrawPuzzle,
+    pub selected_puzzle_piece: i32,
+    pub game_completed: GameCompleted
 }
 
 impl Default for Game {
     fn default() -> Self {
-        Game::init_from_fen("5 5 ZZZZZ/Z1C1Z/Z1Z1Z/Z1CPZ/ZZZZZ".to_string())
+        Game::init_from_fen("5 5 ZZZZZ/Z1C1Z/Z1Z1Z/Z1CPZ/ZZZZZ 2".to_string())
     }
 }
 
@@ -47,6 +56,7 @@ impl Game {
         let num_of_rows: u32 = iter.next().unwrap().parse().unwrap();
         let num_of_columns: u32 = iter.next().unwrap().parse().unwrap();
         let binding = String::from(iter.next().unwrap());
+        let goal: u32 = iter.next().unwrap().parse().unwrap();
         let mut level_iter = binding.split('/').peekable();
         let mut matrix: Matrix<LevelCell> = Matrix::new(
             num_of_rows.try_into().unwrap(),
@@ -462,8 +472,11 @@ impl Game {
             rows: num_of_rows,
             columns: num_of_columns,
             collected_perls: 0,
-            required_perls: 0,
-            puzzle: Vec::new()
+            required_perls: goal,
+            puzzle: Vec::new(),
+            redraw_cond: RedrawPuzzle::No,
+            selected_puzzle_piece: -1,
+            game_completed: GameCompleted::No
         }
     }
 }
