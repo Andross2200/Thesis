@@ -4,6 +4,7 @@ mod model;
 mod utilities;
 mod view;
 
+use utilities::database_plugin::DatabasePlugin;
 use view::game_view::game_view_plugin::GameViewPlugin;
 use view::game_view::image_handler::ImageHandlerPlugin;
 use view::GameState;
@@ -27,6 +28,7 @@ fn main() {
         .add_state(GameState::Game)
         .add_plugin(ImageHandlerPlugin)
         .add_plugin(GameViewPlugin)
+        .add_plugin(DatabasePlugin)
         .run();
 }
 
