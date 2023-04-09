@@ -445,11 +445,7 @@ impl Game {
                     let num = c.to_digit(10).unwrap();
                     for _n in 1..num + 1 {
                         cell = create_level_cell('_', 0.0, image_size, image_size, 0.0, 0.0);
-                        matrix.set(
-                            i.try_into().unwrap(),
-                            col_counter.try_into().unwrap(),
-                            cell,
-                        );
+                        matrix.set(i.try_into().unwrap(), col_counter.try_into().unwrap(), cell);
                         col_counter += 1;
                     }
                 }

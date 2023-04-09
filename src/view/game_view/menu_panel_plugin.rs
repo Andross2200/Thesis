@@ -35,7 +35,7 @@ pub enum PuzzleMovementButtons {
 #[derive(Component)]
 pub struct CompleteLevelButton;
 
-#[derive(Resource,Default)]
+#[derive(Resource, Default)]
 pub struct HidingPanel {
     pub panel: Option<Entity>,
 }
