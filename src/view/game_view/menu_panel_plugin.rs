@@ -1,12 +1,18 @@
-use bevy::{prelude::*, ecs::schedule::ShouldRun};
+use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
 use super::{
     despawn_screen,
-    game_view_plugin::{BLOCK_TYPE_BUTTON_HEIGHT, RedrawPuzzle},
+    game_view_plugin::{RedrawPuzzle, BLOCK_TYPE_BUTTON_HEIGHT},
     image_handler::ImageMap,
-    puzzle_pieces_panels::{close_puzzle_piece_panel, create_pawn_actions_panel, PuzzlePiecePanel, spawn_block},
+    puzzle_pieces_panels::{
+        close_puzzle_piece_panel, create_pawn_actions_panel, spawn_block, PuzzlePiecePanel,
+    },
 };
-use crate::{view::GameState, model::game_model::game::{Game, GameCompleted}, utilities::script_plugin::{ScriptRes, reset_level}};
+use crate::{
+    model::game_model::game::{Game, GameCompleted},
+    utilities::script_plugin::{reset_level, ScriptRes},
+    view::GameState,
+};
 
 const LEVEL_DISPLAY_BUTTON_SIZE: f32 = 50.0;
 const LEVEL_DISPLAY_BUTTON_MARGIN: f32 = 25.0;
@@ -23,7 +29,7 @@ pub struct PuzzlePieceTypeButton;
 #[derive(Component)]
 pub enum PuzzleMovementButtons {
     UP,
-    DOWN
+    DOWN,
 }
 
 #[derive(Component)]
@@ -52,7 +58,11 @@ impl Plugin for MenuViewPlugin {
             .add_system(close_puzzle_piece_panel)
             .add_system(spawn_block)
             .add_system(puzzle_movement_buttons)
-            .add_system_set(SystemSet::new().with_run_criteria(cond_complete_game_button).with_system(complete_game_button))
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(cond_complete_game_button)
+                    .with_system(complete_game_button),
+            )
             .init_resource::<HidingPanel>();
     }
 }
@@ -165,30 +175,34 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, asset_server: 
                     ..default()
                 })
                 .with_children(|parent| {
-                    parent.spawn(ButtonBundle {
-                        style: Style {
-                            size: Size {
-                                width: Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                                height: Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
+                    parent
+                        .spawn(ButtonBundle {
+                            style: Style {
+                                size: Size {
+                                    width: Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
+                                    height: Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
+                                },
+                                margin: UiRect::all(Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN)),
+                                ..Default::default()
                             },
-                            margin: UiRect::all(Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN)),
+                            image: UiImage(asset_server.load("buttons/arrow_up.png")),
                             ..Default::default()
-                        },
-                        image: UiImage(asset_server.load("buttons/arrow_up.png")),
-                        ..Default::default()
-                    }).insert(PuzzleMovementButtons::UP);
-                    parent.spawn(ButtonBundle {
-                        style: Style {
-                            size: Size {
-                                width: Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                                height: Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
+                        })
+                        .insert(PuzzleMovementButtons::UP);
+                    parent
+                        .spawn(ButtonBundle {
+                            style: Style {
+                                size: Size {
+                                    width: Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
+                                    height: Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
+                                },
+                                margin: UiRect::all(Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN)),
+                                ..Default::default()
                             },
-                            margin: UiRect::all(Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN)),
+                            image: UiImage(asset_server.load("buttons/arrow_down.png")),
                             ..Default::default()
-                        },
-                        image: UiImage(asset_server.load("buttons/arrow_down.png")),
-                        ..Default::default()
-                    }).insert(PuzzleMovementButtons::DOWN);
+                        })
+                        .insert(PuzzleMovementButtons::DOWN);
                 });
             parent.spawn((TextBundle::from_section(
                 "Menu",
@@ -221,7 +235,8 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, asset_server: 
                         },
                     )
                     .with_text_alignment(TextAlignment::CENTER),));
-                }).insert(CompleteLevelButton);
+                })
+                .insert(CompleteLevelButton);
             parent
                 .spawn(ButtonBundle {
                     style: Style {
@@ -296,7 +311,7 @@ fn puzzle_movement_buttons(
         ),
     >,
     mut game: ResMut<Game>,
-    mut script_res: ResMut<ScriptRes>
+    mut script_res: ResMut<ScriptRes>,
 ) {
     if game.selected_puzzle_piece != -1 {
         for (interaction, button_type, mut color) in &mut interaction_query {
@@ -313,7 +328,7 @@ fn puzzle_movement_buttons(
                                 game.redraw_cond = RedrawPuzzle::Yes;
                                 reset_level(&mut script_res, &mut game);
                             }
-                        },
+                        }
                         PuzzleMovementButtons::DOWN => {
                             if game.selected_puzzle_piece + 1 != game.puzzle.len() as i32 {
                                 let curr_index = game.selected_puzzle_piece as usize;
@@ -324,16 +339,16 @@ fn puzzle_movement_buttons(
                                 game.redraw_cond = RedrawPuzzle::Yes;
                                 reset_level(&mut script_res, &mut game);
                             }
-                        },
+                        }
                     };
                     *color = BackgroundColor(Color::YELLOW);
-                },
+                }
                 Interaction::Hovered => {
                     *color = BackgroundColor(Color::AQUAMARINE);
-                },
+                }
                 Interaction::None => {
                     *color = BackgroundColor::default();
-                },
+                }
             }
         }
     }
@@ -348,15 +363,22 @@ fn cond_complete_game_button(game: Res<Game>) -> ShouldRun {
 }
 
 fn complete_game_button(
-    mut interaction_query: Query<(&Interaction, &mut BackgroundColor),(Changed<Interaction>,With<Button>,With<CompleteLevelButton>)>
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor),
+        (
+            Changed<Interaction>,
+            With<Button>,
+            With<CompleteLevelButton>,
+        ),
+    >,
 ) {
     for (interaction, mut color) in &mut interaction_query {
         match *interaction {
-            Interaction::Clicked => {},
-            Interaction::Hovered => {},
+            Interaction::Clicked => {}
+            Interaction::Hovered => {}
             Interaction::None => {
                 *color = BackgroundColor(Color::AQUAMARINE);
-            },
+            }
         }
     }
 }

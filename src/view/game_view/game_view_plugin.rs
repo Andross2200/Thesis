@@ -7,17 +7,14 @@ use crate::{
 };
 
 use super::{
-    image_handler::ImageMap, level_view::LevelViewPlugin,
-    menu_panel_plugin::MenuViewPlugin,
+    image_handler::ImageMap, level_view::LevelViewPlugin, menu_panel_plugin::MenuViewPlugin,
 };
-use bevy::{
-    prelude::*, ecs::schedule::ShouldRun,
-};
+use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
 #[derive(PartialEq, Eq)]
 pub enum RedrawPuzzle {
     Yes,
-    No
+    No,
 }
 
 pub struct GameViewPlugin;
@@ -31,7 +28,11 @@ impl Plugin for GameViewPlugin {
             .add_plugin(LevelViewPlugin)
             .add_plugin(ScriptPlugin)
             .add_system(delete_puzzle_piece)
-            .add_system_set(SystemSet::new().with_run_criteria(cond_to_update_puzzle_pieces).with_system(update_puzzle_pieces))
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(cond_to_update_puzzle_pieces)
+                    .with_system(update_puzzle_pieces),
+            )
             .add_system(select_puzzle_piece);
     }
 }
@@ -151,7 +152,8 @@ pub fn create_collect_perl_puzzle_piece_entity(
     return (entity, format!("c{}p", pawn_color.clone()));
 }
 
-fn delete_puzzle_piece(mut commands: Commands,
+fn delete_puzzle_piece(
+    mut commands: Commands,
     windows: Res<Windows>,
     buttons: Res<Input<MouseButton>>,
     mut game: ResMut<Game>,
@@ -160,17 +162,16 @@ fn delete_puzzle_piece(mut commands: Commands,
 ) {
     let window = windows.get_primary().unwrap();
     if buttons.just_pressed(MouseButton::Right) {
-        if let Some(pos) = window.cursor_position()
-        {
-            let window_size = Vec2::new(window.width(),window.height());
+        if let Some(pos) = window.cursor_position() {
+            let window_size = Vec2::new(window.width(), window.height());
             let world_position = pos - window_size / 2.;
             info!(
                 "Mouse pos at Right Click: {} {}",
                 world_position.x, world_position.y
             );
             for (entity, transform) in &mut puzzle_pieces {
-                let transform_x_from = transform.translation.x-50.0;
-                let transform_y_from = transform.translation.y+25.0;
+                let transform_x_from = transform.translation.x - 50.0;
+                let transform_y_from = transform.translation.y + 25.0;
                 let transfrom_x_to = transform_x_from + 100.0;
                 let transfrom_y_to = transform_y_from - 50.0;
                 info!(
@@ -185,7 +186,8 @@ fn delete_puzzle_piece(mut commands: Commands,
                     info!("Chosen");
                     let result = game
                         .puzzle
-                        .iter().position(|&x| x == entity)
+                        .iter()
+                        .position(|&x| x == entity)
                         .expect("Entity should be in the array");
                     commands.entity(entity).despawn_recursive();
                     game.puzzle.remove(result);
@@ -205,14 +207,17 @@ fn cond_to_update_puzzle_pieces(game: Res<Game>) -> ShouldRun {
     }
 }
 
-fn update_puzzle_pieces(mut puzzle_pieces: Query<(Entity, &mut Transform), With<PuzzlePiece>>, mut game: ResMut<Game>) {
+fn update_puzzle_pieces(
+    mut puzzle_pieces: Query<(Entity, &mut Transform), With<PuzzlePiece>>,
+    mut game: ResMut<Game>,
+) {
     for (entity, mut transform) in &mut puzzle_pieces {
-        let index = game.puzzle.iter().position(|x| x == &entity).expect("Enity should be in the puzzle array of game resource");
-        *transform = Transform::from_xyz(
-            -300.0,
-            300.0 - (index as f32 * 50.0),
-            0.0,
-        );
+        let index = game
+            .puzzle
+            .iter()
+            .position(|x| x == &entity)
+            .expect("Enity should be in the puzzle array of game resource");
+        *transform = Transform::from_xyz(-300.0, 300.0 - (index as f32 * 50.0), 0.0);
     }
     game.redraw_cond = RedrawPuzzle::No;
 }
@@ -221,7 +226,7 @@ pub fn select_puzzle_piece(
     windows: Res<Windows>,
     buttons: Res<Input<MouseButton>>,
     mut game: ResMut<Game>,
-    mut puzzle_pieces: Query<(Entity, &Transform, &mut Sprite), With<PuzzlePiece>>
+    mut puzzle_pieces: Query<(Entity, &Transform, &mut Sprite), With<PuzzlePiece>>,
 ) {
     let window = windows.get_primary().unwrap();
     if buttons.just_pressed(MouseButton::Left) {
@@ -232,8 +237,8 @@ pub fn select_puzzle_piece(
                 sprite.color = Color::BLACK;
             }
             for (entity, transform, mut sprite) in &mut puzzle_pieces {
-                let transform_x_from = transform.translation.x-50.0;
-                let transform_y_from = transform.translation.y+25.0;
+                let transform_x_from = transform.translation.x - 50.0;
+                let transform_y_from = transform.translation.y + 25.0;
                 let transfrom_x_to = transform_x_from + 100.0;
                 let transfrom_y_to = transform_y_from - 50.0;
                 if world_position.x >= transform_x_from
@@ -243,7 +248,8 @@ pub fn select_puzzle_piece(
                 {
                     let index = game
                         .puzzle
-                        .iter().position(|&x| x == entity)
+                        .iter()
+                        .position(|&x| x == entity)
                         .expect("Entity should be in the array");
                     game.selected_puzzle_piece = index as i32;
                     sprite.color = Color::YELLOW;

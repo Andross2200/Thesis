@@ -3,7 +3,11 @@ use bevy::prelude::*;
 use crate::{model::game_model::game::Game, utilities::script_plugin::ScriptRes};
 
 use super::{
-    game_view_plugin::{BLOCK_TYPE_BUTTON_HEIGHT, create_move_puzzle_piece_entity, create_collect_perl_puzzle_piece_entity}, image_handler::ImageMap,
+    game_view_plugin::{
+        create_collect_perl_puzzle_piece_entity, create_move_puzzle_piece_entity,
+        BLOCK_TYPE_BUTTON_HEIGHT,
+    },
+    image_handler::ImageMap,
 };
 
 const PAWNS: [&str; 2] = ["green", "orange"];
@@ -146,7 +150,10 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                             bottom: Val::Px(5.0),
                         },
                         position_type: PositionType::Absolute,
-                        position: UiRect { bottom: Val::Px(10.0), ..Default::default()},
+                        position: UiRect {
+                            bottom: Val::Px(10.0),
+                            ..Default::default()
+                        },
                         ..Default::default()
                     },
                     background_color: Color::AQUAMARINE.into(),
@@ -203,77 +210,135 @@ pub fn close_puzzle_piece_panel(
 pub fn spawn_block(
     mut commands: Commands,
     mut interaction_query: Query<
-        (&Interaction,&Name, &mut BackgroundColor),
+        (&Interaction, &Name, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>, With<PuzzlePieceButton>),
     >,
     mut script_res: ResMut<ScriptRes>,
     mut game: ResMut<Game>,
-    image_handler: Res<ImageMap>
+    image_handler: Res<ImageMap>,
 ) {
     for (interaction, name, mut color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 match name.as_str() {
                     "move green up" => {
-                        let (entity, string) = create_move_puzzle_piece_entity(&mut commands, "u".to_string(), "g".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_move_puzzle_piece_entity(
+                            &mut commands,
+                            "u".to_string(),
+                            "g".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     "move green down" => {
-                        let (entity, string) = create_move_puzzle_piece_entity(&mut commands, "d".to_string(), "g".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_move_puzzle_piece_entity(
+                            &mut commands,
+                            "d".to_string(),
+                            "g".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     "move green left" => {
-                        let (entity, string) = create_move_puzzle_piece_entity(&mut commands, "l".to_string(), "g".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_move_puzzle_piece_entity(
+                            &mut commands,
+                            "l".to_string(),
+                            "g".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     "move green right" => {
-                        let (entity, string) = create_move_puzzle_piece_entity(&mut commands, "r".to_string(), "g".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_move_puzzle_piece_entity(
+                            &mut commands,
+                            "r".to_string(),
+                            "g".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     "move orange up" => {
-                        let (entity, string) = create_move_puzzle_piece_entity(&mut commands, "u".to_string(), "o".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_move_puzzle_piece_entity(
+                            &mut commands,
+                            "u".to_string(),
+                            "o".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     "move orange down" => {
-                        let (entity, string) = create_move_puzzle_piece_entity(&mut commands, "d".to_string(), "o".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_move_puzzle_piece_entity(
+                            &mut commands,
+                            "d".to_string(),
+                            "o".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     "move orange left" => {
-                        let (entity, string) = create_move_puzzle_piece_entity(&mut commands, "l".to_string(), "o".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_move_puzzle_piece_entity(
+                            &mut commands,
+                            "l".to_string(),
+                            "o".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     "move orange right" => {
-                        let (entity, string) = create_move_puzzle_piece_entity(&mut commands, "r".to_string(), "o".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_move_puzzle_piece_entity(
+                            &mut commands,
+                            "r".to_string(),
+                            "o".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     "green collects perl" => {
-                        let (entity, string) = create_collect_perl_puzzle_piece_entity(&mut commands, "g".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_collect_perl_puzzle_piece_entity(
+                            &mut commands,
+                            "g".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     "orange collects perl" => {
-                        let (entity, string) = create_collect_perl_puzzle_piece_entity(&mut commands, "o".to_string(), &script_res, &image_handler);
+                        let (entity, string) = create_collect_perl_puzzle_piece_entity(
+                            &mut commands,
+                            "o".to_string(),
+                            &script_res,
+                            &image_handler,
+                        );
                         game.puzzle.push(entity);
                         script_res.script.push(string);
                     }
                     _ => {}
                 };
                 *color = BackgroundColor(Color::YELLOW);
-            },
+            }
             Interaction::Hovered => {
                 *color = BackgroundColor(Color::AQUAMARINE);
-            },
+            }
             Interaction::None => {
                 *color = BackgroundColor::default();
-            },
+            }
         }
     }
 }

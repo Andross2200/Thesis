@@ -7,13 +7,16 @@ use std::{
 use bevy::time::FixedTimestep;
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
-use crate::{view::game_view::{image_handler::ImageMap, level_view::ScoreText}, model::game_model::game::GameCompleted};
 use crate::{
     model::game_model::game::Game,
     view::game_view::level_view::{
         CellCollider, CellMovable, GreenPawn, OrangePawn, Perl, ShellType,
     },
     MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH,
+};
+use crate::{
+    model::game_model::game::GameCompleted,
+    view::game_view::{image_handler::ImageMap, level_view::ScoreText},
 };
 use crate::{SHIFT_DOWN, SHIFT_TO_RIGHT};
 
@@ -110,7 +113,7 @@ pub fn run_script(
     >,
     mut script_res: ResMut<ScriptRes>,
     mut game: ResMut<Game>,
-    mut score_text: Query<&mut Text, With<ScoreText>>
+    mut score_text: Query<&mut Text, With<ScoreText>>,
 ) {
     let image_size = min(
         MAX_LEVEL_WIDTH as u32 / game.columns,
@@ -127,7 +130,12 @@ pub fn run_script(
             script_res.run_index -= 1;
         }
         for mut green_pawn in &mut gpawn {
-            match script_res.script.get(script_res.run_index).unwrap().as_str() {
+            match script_res
+                .script
+                .get(script_res.run_index)
+                .unwrap()
+                .as_str()
+            {
                 "mgd" => {
                     let direction: Direction = if !run_backwards {
                         Direction::DOWN
@@ -197,13 +205,24 @@ pub fn run_script(
                     }
                 }
                 "cgp" => {
-                    get_perl_at_pawn(green_pawn.borrow_mut(), perls.borrow_mut(), &mut game, image_size, run_backwards);
+                    get_perl_at_pawn(
+                        green_pawn.borrow_mut(),
+                        perls.borrow_mut(),
+                        &mut game,
+                        image_size,
+                        run_backwards,
+                    );
                 }
                 _ => {}
             }
         }
         for mut orange_pawn in &mut opawn {
-            match script_res.script.get(script_res.run_index).unwrap().as_str() {
+            match script_res
+                .script
+                .get(script_res.run_index)
+                .unwrap()
+                .as_str()
+            {
                 "mod" => {
                     let direction: Direction = if !run_backwards {
                         Direction::DOWN
@@ -273,7 +292,13 @@ pub fn run_script(
                     }
                 }
                 "cop" => {
-                    get_perl_at_pawn(orange_pawn.borrow_mut(), perls.borrow_mut(), &mut game, image_size, run_backwards);
+                    get_perl_at_pawn(
+                        orange_pawn.borrow_mut(),
+                        perls.borrow_mut(),
+                        &mut game,
+                        image_size,
+                        run_backwards,
+                    );
                 }
                 _ => {}
             }
@@ -288,7 +313,11 @@ pub fn run_script(
         }
     }
     for mut text in &mut score_text {
-        text.sections[1].value = format!("{}/{}", game.borrow().collected_perls, game.borrow().required_perls);
+        text.sections[1].value = format!(
+            "{}/{}",
+            game.borrow().collected_perls,
+            game.borrow().required_perls
+        );
     }
     if script_res.run_index >= script_res.script.len()
         && (script_res.run_status == ScriptRunStatus::Running
@@ -542,12 +571,24 @@ fn get_perl_at_pawn(
             && style
                 .position
                 .left
-                .reflect_partial_eq(&pawn.position.left.try_add(Val::Px(image_size/4.0)).unwrap())
+                .reflect_partial_eq(
+                    &pawn
+                        .position
+                        .left
+                        .try_add(Val::Px(image_size / 4.0))
+                        .unwrap(),
+                )
                 .unwrap()
             && style
                 .position
                 .top
-                .reflect_partial_eq(&pawn.position.top.try_add(Val::Px(image_size/4.0)).unwrap())
+                .reflect_partial_eq(
+                    &pawn
+                        .position
+                        .top
+                        .try_add(Val::Px(image_size / 4.0))
+                        .unwrap(),
+                )
                 .unwrap()
         {
             style.display = new_disp;

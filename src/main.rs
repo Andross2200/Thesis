@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
 mod model;
-mod view;
 mod utilities;
+mod view;
 
 use view::game_view::game_view_plugin::GameViewPlugin;
-use view::GameState;
 use view::game_view::image_handler::ImageHandlerPlugin;
+use view::GameState;
 
 const MAX_LEVEL_WIDTH: f32 = 500.0;
 const MAX_LEVEL_HEIGHT: f32 = 550.0;
@@ -31,5 +31,5 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn((Camera2dBundle::default(),MainCamera));
+    commands.spawn((Camera2dBundle::default(), MainCamera));
 }

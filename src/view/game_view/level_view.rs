@@ -1,13 +1,15 @@
 use self::LevelControlButtonType::*;
+use super::despawn_screen;
 use super::image_handler::ImageMap;
 use crate::{
     model::game_model::game::{Game, LevelCell},
-    MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH, SHIFT_DOWN, SHIFT_TO_RIGHT, view::GameState, utilities::script_plugin::{ScriptRunStatus, reset_level, ScriptRes},
+    utilities::script_plugin::{reset_level, ScriptRes, ScriptRunStatus},
+    view::GameState,
+    MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH, SHIFT_DOWN, SHIFT_TO_RIGHT,
 };
 use bevy::prelude::*;
 use std::cmp::min;
 use std::slice::Iter;
-use super::despawn_screen;
 
 const LEVEL_DISPLAY_BUTTON_SIZE: f32 = 50.0;
 const LEVEL_DISPLAY_BUTTON_MARGIN: f32 = 5.0;
@@ -64,8 +66,10 @@ impl LevelControlButtonType {
 impl Plugin for LevelViewPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_enter(GameState::Game).with_system(create_panel))
-        .add_system_set(SystemSet::on_exit(GameState::Game).with_system(despawn_screen::<LevelView>),)
-        .add_system(level_control_button_system);
+            .add_system_set(
+                SystemSet::on_exit(GameState::Game).with_system(despawn_screen::<LevelView>),
+            )
+            .add_system(level_control_button_system);
     }
 }
 
@@ -262,41 +266,44 @@ fn create_button(
 }
 
 fn create_info_panel(commands: &mut Commands, image_map: &ImageMap) -> Entity {
-    commands.spawn((
-        TextBundle::from_sections([
-            TextSection::new(
-                "Perl: ",
-                TextStyle {
+    commands
+        .spawn((
+            TextBundle::from_sections([
+                TextSection::new(
+                    "Perl: ",
+                    TextStyle {
+                        font: image_map.2.get(0).unwrap().clone(),
+                        font_size: 40.0,
+                        color: Color::BLACK,
+                    },
+                ),
+                TextSection::from_style(TextStyle {
                     font: image_map.2.get(0).unwrap().clone(),
                     font_size: 40.0,
-                    color: Color::BLACK
-                }
-            ),
-            TextSection::from_style(TextStyle {
-                font: image_map.2.get(0).unwrap().clone(),
-                font_size: 40.0,
-                color: Color::BLACK
-            })
-        ])
-        .with_style(Style {
-            position_type: PositionType::Absolute,
-            position: UiRect {
-                left: Val::Px(0.0),
-                bottom: Val::Px(0.0),
+                    color: Color::BLACK,
+                }),
+            ])
+            .with_style(Style {
+                position_type: PositionType::Absolute,
+                position: UiRect {
+                    left: Val::Px(0.0),
+                    bottom: Val::Px(0.0),
+                    ..Default::default()
+                },
                 ..Default::default()
-            },
-            ..Default::default()
-        }),
-        ScoreText
-    )).id()
+            }),
+            ScoreText,
+        ))
+        .id()
 }
 
 fn level_control_button_system(
     mut interaction_query: Query<
         (&Interaction, &LevelControlButtonType, &mut BackgroundColor),
-        (Changed<Interaction>, With<Button>)>,
+        (Changed<Interaction>, With<Button>),
+    >,
     mut script_res: ResMut<ScriptRes>,
-    mut game: ResMut<Game>
+    mut game: ResMut<Game>,
 ) {
     for (interaction, button_type, mut color) in &mut interaction_query {
         match *interaction {
@@ -322,11 +329,21 @@ fn level_control_button_system(
             }
             Interaction::Hovered => {
                 match *button_type {
-                    LevelControlButtonType::Play => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                    LevelControlButtonType::StepBack => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                    LevelControlButtonType::StepForward => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                    LevelControlButtonType::Pause => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
-                    LevelControlButtonType::Stop => {info!("Button: {:?}, Action: {:?}", button_type, interaction);}
+                    LevelControlButtonType::Play => {
+                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
+                    }
+                    LevelControlButtonType::StepBack => {
+                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
+                    }
+                    LevelControlButtonType::StepForward => {
+                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
+                    }
+                    LevelControlButtonType::Pause => {
+                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
+                    }
+                    LevelControlButtonType::Stop => {
+                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
+                    }
                 };
                 *color = BackgroundColor(Color::AQUAMARINE);
             }

@@ -4,7 +4,11 @@ use std::collections::HashMap;
 pub struct ImageHandlerPlugin;
 
 #[derive(Resource)]
-pub struct ImageMap(pub HashMap<String, UiImage>, pub Vec<UiImage>, pub Vec<Handle<Font>>);
+pub struct ImageMap(
+    pub HashMap<String, UiImage>,
+    pub Vec<UiImage>,
+    pub Vec<Handle<Font>>,
+);
 
 impl Plugin for ImageHandlerPlugin {
     fn build(&self, app: &mut App) {
@@ -13,7 +17,6 @@ impl Plugin for ImageHandlerPlugin {
 }
 
 fn load_images(mut commands: Commands, asset_server: Res<AssetServer>) {
-
     // Cells
     let mut image_map: HashMap<String, UiImage> = HashMap::new();
 

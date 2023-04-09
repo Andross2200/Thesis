@@ -1,4 +1,4 @@
-use crate::{MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH, view::game_view::game_view_plugin::RedrawPuzzle};
+use crate::{view::game_view::game_view_plugin::RedrawPuzzle, MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH};
 use bevy::prelude::*;
 use simple_matrix::Matrix;
 use std::{cmp::min, f32::consts::PI};
@@ -6,7 +6,7 @@ use std::{cmp::min, f32::consts::PI};
 #[derive(PartialEq, Eq)]
 pub enum GameCompleted {
     Yes,
-    No
+    No,
 }
 
 #[derive(Default, Clone, Copy)]
@@ -17,7 +17,7 @@ pub struct LevelCell {
     pub image_size_y: f32,
     pub extra_move_x: f32,
     pub extra_move_y: f32,
-    pub cell_entity: Option<Entity>
+    pub cell_entity: Option<Entity>,
 }
 
 #[derive(Resource)]
@@ -31,7 +31,7 @@ pub struct Game {
     pub puzzle: Vec<Entity>,
     pub redraw_cond: RedrawPuzzle,
     pub selected_puzzle_piece: i32,
-    pub game_completed: GameCompleted
+    pub game_completed: GameCompleted,
 }
 
 impl Default for Game {
@@ -367,14 +367,7 @@ impl Game {
                             );
                         }
                         'm' => {
-                            cell = create_level_cell(
-                                c,
-                                PI,
-                                image_size,
-                                image_size * 0.5,
-                                0.0,
-                                0.0,
-                            );
+                            cell = create_level_cell(c, PI, image_size, image_size * 0.5, 0.0, 0.0);
                         }
                         'l' => {
                             cell = create_level_cell(
@@ -446,11 +439,7 @@ impl Game {
                             continue;
                         }
                     }
-                    matrix.set(
-                        i.try_into().unwrap(),
-                        col_counter.try_into().unwrap(),
-                        cell,
-                    );
+                    matrix.set(i.try_into().unwrap(), col_counter.try_into().unwrap(), cell);
                     col_counter += 1;
                 } else if c.is_numeric() {
                     let num = c.to_digit(10).unwrap();
@@ -476,7 +465,7 @@ impl Game {
             puzzle: Vec::new(),
             redraw_cond: RedrawPuzzle::No,
             selected_puzzle_piece: -1,
-            game_completed: GameCompleted::No
+            game_completed: GameCompleted::No,
         }
     }
 }
@@ -496,6 +485,6 @@ fn create_level_cell(
         image_size_y: image_size_y,
         extra_move_x: extra_move_x,
         extra_move_y: extra_move_y,
-        cell_entity: None
+        cell_entity: None,
     }
 }
