@@ -28,22 +28,16 @@ pub struct PuzzlePieceTypeButton;
 
 #[derive(Component)]
 pub enum PuzzleMovementButtons {
-    UP,
-    DOWN,
+    Up,
+    Down,
 }
 
 #[derive(Component)]
 pub struct CompleteLevelButton;
 
-#[derive(Resource)]
+#[derive(Resource,Default)]
 pub struct HidingPanel {
     pub panel: Option<Entity>,
-}
-
-impl Default for HidingPanel {
-    fn default() -> Self {
-        HidingPanel { panel: None }
-    }
 }
 
 pub struct MenuViewPlugin;
@@ -188,7 +182,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, asset_server: 
                             image: UiImage(asset_server.load("buttons/arrow_up.png")),
                             ..Default::default()
                         })
-                        .insert(PuzzleMovementButtons::UP);
+                        .insert(PuzzleMovementButtons::Up);
                     parent
                         .spawn(ButtonBundle {
                             style: Style {
@@ -202,7 +196,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, asset_server: 
                             image: UiImage(asset_server.load("buttons/arrow_down.png")),
                             ..Default::default()
                         })
-                        .insert(PuzzleMovementButtons::DOWN);
+                        .insert(PuzzleMovementButtons::Down);
                 });
             parent.spawn((TextBundle::from_section(
                 "Menu",
@@ -280,15 +274,12 @@ fn puzzle_type_buttons(
     for (interaction, button_name, mut color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
-                match button_name.as_str() {
-                    "Pawn Actions" => {
-                        for p in &mut panel {
-                            commands.entity(p).despawn();
-                        }
-                        create_pawn_actions_panel(&mut commands, &image_handler);
+                if button_name.as_str() == "Pawn Actions" {
+                    for p in &mut panel {
+                        commands.entity(p).despawn();
                     }
-                    _ => {}
-                };
+                    create_pawn_actions_panel(&mut commands, &image_handler);
+                }
                 *color = BackgroundColor(Color::YELLOW);
             }
             Interaction::Hovered => {
@@ -318,7 +309,7 @@ fn puzzle_movement_buttons(
             match *interaction {
                 Interaction::Clicked => {
                     match *button_type {
-                        PuzzleMovementButtons::UP => {
+                        PuzzleMovementButtons::Up => {
                             if game.selected_puzzle_piece != 0 {
                                 let curr_index = game.selected_puzzle_piece as usize;
                                 let new_index = (game.selected_puzzle_piece - 1) as usize;
@@ -329,7 +320,7 @@ fn puzzle_movement_buttons(
                                 reset_level(&mut script_res, &mut game);
                             }
                         }
-                        PuzzleMovementButtons::DOWN => {
+                        PuzzleMovementButtons::Down => {
                             if game.selected_puzzle_piece + 1 != game.puzzle.len() as i32 {
                                 let curr_index = game.selected_puzzle_piece as usize;
                                 let new_index = (game.selected_puzzle_piece + 1) as usize;

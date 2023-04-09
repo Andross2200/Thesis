@@ -87,7 +87,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                         .with_children(|button| {
                             button.spawn(
                                 (TextBundle::from_section(
-                                    format!("move {} {}", color, direction),
+                                    format!("move {color} {direction}"),
                                     TextStyle {
                                         font: image_handler.2.get(0).unwrap().clone(),
                                         font_size: 20.0,
@@ -97,7 +97,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                                 .with_text_alignment(TextAlignment::CENTER),
                             );
                         })
-                        .insert(Name::new(format!("move {} {}", color, direction)))
+                        .insert(Name::new(format!("move {color} {direction}")))
                         .insert(PuzzlePieceButton);
                 }
             }
@@ -123,7 +123,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                     .with_children(|button| {
                         button.spawn(
                             (TextBundle::from_section(
-                                format!("{} collects perl", color),
+                                format!("{color} collects perl"),
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 20.0,
@@ -133,7 +133,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                             .with_text_alignment(TextAlignment::CENTER),
                         );
                     })
-                    .insert(Name::new(format!("{} collects perl", color)))
+                    .insert(Name::new(format!("{color} collects perl")))
                     .insert(PuzzlePieceButton);
             }
             parent

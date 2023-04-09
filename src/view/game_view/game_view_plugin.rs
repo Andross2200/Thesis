@@ -77,11 +77,11 @@ pub fn create_move_puzzle_piece_entity(
                 .with_children(|parent| {
                     parent.spawn(Text2dBundle {
                         text: Text::from_section(
-                            format!("move {} {}", pawn_color, direction),
+                            format!("move {pawn_color} {direction}"),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 20.0,
-                                color: Color::BLACK.into(),
+                                color: Color::BLACK,
                             },
                         )
                         .with_alignment(TextAlignment::CENTER),
@@ -93,7 +93,7 @@ pub fn create_move_puzzle_piece_entity(
         .id();
     return (
         entity,
-        format!("m{}{}", pawn_color.clone(), direction.clone()),
+        format!("m{pawn_color}{direction}"),
     );
 }
 
@@ -139,7 +139,7 @@ pub fn create_collect_perl_puzzle_piece_entity(
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 20.0,
-                                color: Color::BLACK.into(),
+                                color: Color::BLACK,
                             },
                         )
                         .with_alignment(TextAlignment::CENTER),
@@ -149,7 +149,7 @@ pub fn create_collect_perl_puzzle_piece_entity(
                 });
         })
         .id();
-    return (entity, format!("c{}p", pawn_color.clone()));
+    return (entity, format!("c{pawn_color}p"));
 }
 
 fn delete_puzzle_piece(

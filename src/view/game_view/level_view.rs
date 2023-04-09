@@ -197,16 +197,16 @@ fn create_cell(
         commands.entity(cell).insert(CellCollider);
     }
     cell_data.cell_entity = Some(cell);
-    return cell;
+    cell
 }
 
 fn get_image(letter: char, image_map: &ImageMap) -> UiImage {
-    for key in (*image_map).0.keys() {
+    for key in (image_map).0.keys() {
         if key.contains(letter) {
             return (*image_map.0.get(key).unwrap()).clone();
         }
     }
-    return UiImage::default();
+    UiImage::default()
 }
 
 fn create_button_panel(commands: &mut Commands, image_map: &ImageMap) -> Entity {
@@ -240,7 +240,7 @@ fn create_button_panel(commands: &mut Commands, image_map: &ImageMap) -> Entity 
         })
         .id();
     commands.entity(panel).push_children(&buttons);
-    return panel;
+    panel
 }
 
 fn create_button(

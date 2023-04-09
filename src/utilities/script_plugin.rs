@@ -20,7 +20,7 @@ use crate::{
 };
 use crate::{SHIFT_DOWN, SHIFT_TO_RIGHT};
 
-const TIMESTEP_1_PER_SECOND: f64 = 60.0 / 60.0;
+const TIMESTEP_1_PER_SECOND: f64 = 1.0;
 
 #[derive(PartialEq, Eq)]
 pub enum ScriptRunStatus {
@@ -33,10 +33,10 @@ pub enum ScriptRunStatus {
 }
 
 pub enum Direction {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
+    Up,
+    Down,
+    Left,
+    Right,
 }
 
 #[derive(Resource)]
@@ -138,9 +138,9 @@ pub fn run_script(
             {
                 "mgd" => {
                     let direction: Direction = if !run_backwards {
-                        Direction::DOWN
+                        Direction::Down
                     } else {
-                        Direction::UP
+                        Direction::Up
                     };
                     if !check_location(
                         green_pawn.borrow_mut(),
@@ -155,9 +155,9 @@ pub fn run_script(
                 }
                 "mgu" => {
                     let direction: Direction = if !run_backwards {
-                        Direction::UP
+                        Direction::Up
                     } else {
-                        Direction::DOWN
+                        Direction::Down
                     };
                     if !check_location(
                         green_pawn.borrow_mut(),
@@ -172,9 +172,9 @@ pub fn run_script(
                 }
                 "mgl" => {
                     let direction: Direction = if !run_backwards {
-                        Direction::LEFT
+                        Direction::Left
                     } else {
-                        Direction::RIGHT
+                        Direction::Right
                     };
                     if !check_location(
                         green_pawn.borrow_mut(),
@@ -189,9 +189,9 @@ pub fn run_script(
                 }
                 "mgr" => {
                     let direction: Direction = if !run_backwards {
-                        Direction::RIGHT
+                        Direction::Right
                     } else {
-                        Direction::LEFT
+                        Direction::Left
                     };
                     if !check_location(
                         green_pawn.borrow_mut(),
@@ -199,7 +199,7 @@ pub fn run_script(
                         walls.borrow_mut(),
                         image_size,
                     ) {
-                        move_pawn(green_pawn, Direction::RIGHT, image_size);
+                        move_pawn(green_pawn, Direction::Right, image_size);
                     } else {
                         reset_level(&mut script_res, &mut game);
                     }
@@ -225,9 +225,9 @@ pub fn run_script(
             {
                 "mod" => {
                     let direction: Direction = if !run_backwards {
-                        Direction::DOWN
+                        Direction::Down
                     } else {
-                        Direction::UP
+                        Direction::Up
                     };
                     if !check_location(
                         orange_pawn.borrow_mut(),
@@ -242,9 +242,9 @@ pub fn run_script(
                 }
                 "mou" => {
                     let direction: Direction = if !run_backwards {
-                        Direction::UP
+                        Direction::Up
                     } else {
-                        Direction::DOWN
+                        Direction::Down
                     };
                     if !check_location(
                         orange_pawn.borrow_mut(),
@@ -259,9 +259,9 @@ pub fn run_script(
                 }
                 "mol" => {
                     let direction: Direction = if !run_backwards {
-                        Direction::LEFT
+                        Direction::Left
                     } else {
-                        Direction::RIGHT
+                        Direction::Right
                     };
                     if !check_location(
                         orange_pawn.borrow_mut(),
@@ -276,9 +276,9 @@ pub fn run_script(
                 }
                 "mor" => {
                     let direction: Direction = if !run_backwards {
-                        Direction::RIGHT
+                        Direction::Right
                     } else {
-                        Direction::LEFT
+                        Direction::Left
                     };
                     if !check_location(
                         orange_pawn.borrow_mut(),
@@ -344,28 +344,28 @@ pub fn reset_level(script_res: &mut ResMut<ScriptRes>, game: &mut ResMut<Game>) 
 fn move_pawn(mut pawn: Mut<Style>, direction: Direction, image_size: f32) {
     let old_pos = pawn.position;
     match direction {
-        Direction::UP => {
+        Direction::Up => {
             pawn.position = UiRect {
                 left: old_pos.left,
                 top: old_pos.top.try_sub(Val::Px(image_size)).unwrap(),
                 ..Default::default()
             };
         }
-        Direction::DOWN => {
+        Direction::Down => {
             pawn.position = UiRect {
                 left: old_pos.left,
                 top: old_pos.top.try_add(Val::Px(image_size)).unwrap(),
                 ..Default::default()
             };
         }
-        Direction::LEFT => {
+        Direction::Left => {
             pawn.position = UiRect {
                 left: old_pos.left.try_sub(Val::Px(image_size)).unwrap(),
                 top: old_pos.top,
                 ..Default::default()
             };
         }
-        Direction::RIGHT => {
+        Direction::Right => {
             pawn.position = UiRect {
                 left: old_pos.left.try_add(Val::Px(image_size)).unwrap(),
                 top: old_pos.top,
@@ -393,28 +393,28 @@ fn check_location(
     #[allow(unused_assignments)]
     let mut pos_to_check = UiRect::default();
     match direction {
-        Direction::UP => {
+        Direction::Up => {
             pos_to_check = UiRect {
                 left: pawn.position.left,
                 top: pawn.position.top.try_sub(Val::Px(image_size)).unwrap(),
                 ..Default::default()
             };
         }
-        Direction::DOWN => {
+        Direction::Down => {
             pos_to_check = UiRect {
                 left: pawn.position.left,
                 top: pawn.position.top.try_add(Val::Px(image_size)).unwrap(),
                 ..Default::default()
             };
         }
-        Direction::LEFT => {
+        Direction::Left => {
             pos_to_check = UiRect {
                 left: pawn.position.left.try_sub(Val::Px(image_size)).unwrap(),
                 top: pawn.position.top,
                 ..Default::default()
             };
         }
-        Direction::RIGHT => {
+        Direction::Right => {
             pos_to_check = UiRect {
                 left: pawn.position.left.try_add(Val::Px(image_size)).unwrap(),
                 top: pawn.position.top,

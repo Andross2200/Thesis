@@ -448,7 +448,7 @@ impl Game {
                         matrix.set(
                             i.try_into().unwrap(),
                             col_counter.try_into().unwrap(),
-                            cell.clone(),
+                            cell,
                         );
                         col_counter += 1;
                     }
@@ -479,12 +479,12 @@ fn create_level_cell(
     extra_move_y: f32,
 ) -> LevelCell {
     LevelCell {
-        letter: letter,
-        angle: angle,
-        image_size_x: image_size_x,
-        image_size_y: image_size_y,
-        extra_move_x: extra_move_x,
-        extra_move_y: extra_move_y,
+        letter,
+        angle,
+        image_size_x,
+        image_size_y,
+        extra_move_x,
+        extra_move_y,
         cell_entity: None,
     }
 }
