@@ -1,732 +1,258 @@
-use std::f32::consts::PI;
-
-use super::{despawn_screen, GameState};
-use crate::model::game_model::game::{init_from_fen, Game};
-use bevy::{
-    input::mouse::{MouseScrollUnit, MouseWheel},
-    prelude::*,
+use crate::{
+    model::game_model::{
+        game::Game,
+        pizzle_pieces::{CollectPerlPuzzlePiece, MovementPuzzlePiece, PuzzlePiece},
+    },
+    utilities::script_plugin::{ScriptPlugin, ScriptRes},
 };
-use std::cmp::min;
+
+use super::{
+    image_handler::ImageMap, level_view::LevelViewPlugin, menu_panel_plugin::MenuViewPlugin,
+};
+use bevy::{ecs::schedule::ShouldRun, prelude::*};
+
+#[derive(PartialEq, Eq)]
+pub enum RedrawPuzzle {
+    Yes,
+    No,
+}
 
 pub struct GameViewPlugin;
 
-const LEVEL_DISPLAY_BUTTON_SIZE: f32 = 50.0;
-const LEVEL_DISPLAY_BUTTON_MARGIN: f32 = 5.0;
-const MAX_LEVEL_WIDTH: f32 = 500.0;
-const MAX_LEVEL_HEIGHT: f32 = 550.0;
-const SHIFT_TO_RIGHT: f32 = 7.0;
-const SHIFT_DOWN: f32 = 20.0;
-const BLOCK_TYPE_BUTTON_HEIGHT: f32 = 25.0;
-
-#[derive(Component)]
-struct GameViewScreen;
+pub const BLOCK_TYPE_BUTTON_HEIGHT: f32 = 25.0;
 
 impl Plugin for GameViewPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
+        app.init_resource::<Game>()
+            .add_plugin(MenuViewPlugin)
+            .add_plugin(LevelViewPlugin)
+            .add_plugin(ScriptPlugin)
+            .add_system(delete_puzzle_piece)
             .add_system_set(
-                SystemSet::on_exit(GameState::Game).with_system(despawn_screen::<GameViewScreen>),
+                SystemSet::new()
+                    .with_run_criteria(cond_to_update_puzzle_pieces)
+                    .with_system(update_puzzle_pieces),
             )
-            .add_system(mouse_scroll);
+            .add_system(select_puzzle_piece);
     }
 }
 
-fn game_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let game =
-        init_from_fen("5 10 ZQWERTYUIA/SDFGHJKzxc/vqwertyuia/sdfghjkbnm/lBNpPXoOCV".to_string());
-    // Level Display
-    commands
-        .spawn((
-            ImageBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    position: UiRect {
-                        right: Val::Px(0.0),
-                        bottom: Val::Px(0.0),
-                        ..default()
-                    },
-                    margin: UiRect::all(Val::Auto),
-                    flex_direction: FlexDirection::Row,
-                    align_items: AlignItems::Center,
-                    size: Size {
-                        width: Val::Percent(40.0),
-                        height: Val::Percent(100.0),
-                    },
-                    ..default()
-                },
-                image: UiImage(asset_server.load("level_background.png")),
-                ..default()
+pub fn create_move_puzzle_piece_entity(
+    commands: &mut Commands,
+    direction: String,
+    pawn_color: String,
+    script_res: &ScriptRes,
+    image_handler: &ImageMap,
+) -> (Entity, String) {
+    let entity = commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: Color::BLACK,
+                custom_size: Some(Vec2 { x: 100.0, y: 50.0 }),
+                ..Default::default()
             },
-            GameViewScreen,
-        ))
-        .with_children(|parent| {
-            parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Absolute,
-                        position: UiRect {
-                            right: Val::Px(0.0),
-                            bottom: Val::Px(0.0),
-                            ..default()
-                        },
-                        size: Size {
-                            width: Val::Px(
-                                5.0 * (LEVEL_DISPLAY_BUTTON_MARGIN * 2.0
-                                    + LEVEL_DISPLAY_BUTTON_SIZE),
-                            ),
-                            height: Val::Px(
-                                LEVEL_DISPLAY_BUTTON_MARGIN * 2.0 + LEVEL_DISPLAY_BUTTON_SIZE,
-                            ),
-                        },
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::FlexStart,
-                        ..default()
-                    },
-                    background_color: Color::GRAY.into(),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    // Play button
-                    parent.spawn(ButtonBundle {
-                        style: Style {
-                            size: Size::new(
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                            ),
-                            margin: UiRect {
-                                right: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                top: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                left: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                bottom: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                            },
-                            ..default()
-                        },
-                        image: UiImage(asset_server.load("buttons/start.png")),
-                        ..default()
-                    });
-                    // Step back button
-                    parent.spawn(ButtonBundle {
-                        style: Style {
-                            size: Size::new(
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                            ),
-                            margin: UiRect {
-                                right: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                top: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                left: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                bottom: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                            },
-                            ..default()
-                        },
-                        image: UiImage(asset_server.load("buttons/step_back.png")),
-                        ..default()
-                    });
-                    // Step forward button
-                    parent.spawn(ButtonBundle {
-                        style: Style {
-                            size: Size::new(
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                            ),
-                            margin: UiRect {
-                                right: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                top: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                left: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                bottom: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                            },
-                            ..default()
-                        },
-                        image: UiImage(asset_server.load("buttons/step_forward.png")),
-                        ..default()
-                    });
-                    // Step pause button
-                    parent.spawn(ButtonBundle {
-                        style: Style {
-                            size: Size::new(
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                            ),
-                            margin: UiRect {
-                                right: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                top: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                left: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                bottom: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                            },
-                            ..default()
-                        },
-                        image: UiImage(asset_server.load("buttons/pause.png")),
-                        ..default()
-                    });
-                    // Stop button
-                    parent.spawn(ButtonBundle {
-                        style: Style {
-                            size: Size::new(
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                                Val::Px(LEVEL_DISPLAY_BUTTON_SIZE),
-                            ),
-                            margin: UiRect {
-                                right: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                top: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                left: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                                bottom: Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN),
-                            },
-                            ..default()
-                        },
-                        image: UiImage(asset_server.load("buttons/stop.png")),
-                        ..default()
-                    });
-                });
-            draw_level(parent, &asset_server, game);
-        });
-    // Menu display
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                position: UiRect {
-                    left: Val::Px(0.0),
-                    bottom: Val::Px(0.0),
-                    ..default()
-                },
-                margin: UiRect::all(Val::Auto),
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                size: Size {
-                    width: Val::Percent(10.0),
-                    height: Val::Percent(100.0),
-                },
-                ..default()
-            },
-            background_color: Color::WHITE.into(),
-            ..default()
+            transform: Transform::from_xyz(
+                -300.0,
+                300.0 - (script_res.script.len() as f32 * 50.0),
+                0.0,
+            ),
+            ..Default::default()
         })
+        .insert(MovementPuzzlePiece {
+            direction: direction.clone(),
+            pawn_color: pawn_color.clone(),
+        })
+        .insert(PuzzlePiece)
         .with_children(|parent| {
-            parent.spawn((TextBundle::from_section(
-                "Blocks",
-                TextStyle {
-                    font: asset_server.load("fonts/NotoSans-Regular.ttf"),
-                    font_size: 50.0,
-                    color: Color::BLACK,
-                },
-            )
-            .with_text_alignment(TextAlignment::CENTER),));
             parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::FlexStart,
-                        size: Size {
-                            width: Val::Percent(100.0),
-                            height: Val::Px((BLOCK_TYPE_BUTTON_HEIGHT + 10.0) * 4.0),
-                        },
-                        ..default()
+                .spawn(SpriteBundle {
+                    sprite: Sprite {
+                        color: Color::GREEN,
+                        custom_size: Some(Vec2 { x: 95.0, y: 45.0 }),
+                        ..Default::default()
                     },
-                    background_color: Color::GRAY.into(),
-                    ..default()
-                })
-                .with_children(|block_node| {
-                    let block_types: [&str; 4] = ["Movement", "Flow Control", "Numbers", "Logic"];
-                    for str in block_types {
-                        block_node
-                            .spawn(ButtonBundle {
-                                style: Style {
-                                    size: Size {
-                                        width: Val::Percent(90.0),
-                                        height: Val::Px(BLOCK_TYPE_BUTTON_HEIGHT),
-                                    },
-                                    margin: UiRect {
-                                        left: Val::Px(5.0),
-                                        right: Val::Px(5.0),
-                                        top: Val::Px(5.0),
-                                        bottom: Val::Px(5.0),
-                                    },
-                                    ..default()
-                                },
-                                background_color: Color::AQUAMARINE.into(),
-                                ..default()
-                            })
-                            .with_children(|button| {
-                                button.spawn(
-                                    (TextBundle::from_section(
-                                        str,
-                                        TextStyle {
-                                            font: asset_server.load("fonts/NotoSans-Regular.ttf"),
-                                            font_size: 20.0,
-                                            color: Color::BLACK,
-                                        },
-                                    ))
-                                    .with_text_alignment(TextAlignment::CENTER),
-                                );
-                            });
-                    }
-                });
-            parent.spawn((TextBundle::from_section(
-                "Variables",
-                TextStyle {
-                    font: asset_server.load("fonts/NotoSans-Regular.ttf"),
-                    font_size: 40.0,
-                    color: Color::BLACK,
-                },
-            )
-            .with_text_alignment(TextAlignment::CENTER),));
-            parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        flex_direction: FlexDirection::Column,
-                        align_self: AlignSelf::Stretch,
-                        size: Size {
-                            width: Val::Percent(100.0),
-                            height: Val::Percent(30.0),
-                        },
-                        overflow: Overflow::Hidden,
-                        ..default()
-                    },
-                    background_color: Color::GRAY.into(),
-                    ..default()
+                    transform: Transform::from_translation(Vec3::Z),
+                    ..Default::default()
                 })
                 .with_children(|parent| {
-                    parent
-                        .spawn((
-                            NodeBundle {
-                                style: Style {
-                                    flex_direction: FlexDirection::Column,
-                                    flex_grow: 1.0,
-                                    max_size: Size::UNDEFINED,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                ..default()
+                    parent.spawn(Text2dBundle {
+                        text: Text::from_section(
+                            format!("move {pawn_color} {direction}"),
+                            TextStyle {
+                                font: image_handler.2.get(0).unwrap().clone(),
+                                font_size: 20.0,
+                                color: Color::BLACK,
                             },
-                            ScrollingList::default(),
-                        ))
-                        .with_children(|parent| {
-                            for i in 0..30 {
-                                parent.spawn(
-                                    TextBundle::from_section(
-                                        format!("Variable {i}"),
-                                        TextStyle {
-                                            font: asset_server.load("fonts/NotoSans-Regular.ttf"),
-                                            font_size: 20.0,
-                                            color: Color::WHITE,
-                                        },
-                                    )
-                                    .with_style(Style {
-                                        flex_shrink: 0.,
-                                        size: Size::new(Val::Undefined, Val::Px(20.)),
-                                        margin: UiRect {
-                                            left: Val::Auto,
-                                            right: Val::Auto,
-                                            ..default()
-                                        },
-                                        ..default()
-                                    }),
-                                );
-                            }
-                        });
+                        )
+                        .with_alignment(TextAlignment::CENTER),
+                        transform: Transform::from_translation(Vec3::Z),
+                        ..Default::default()
+                    });
                 });
-            parent.spawn((TextBundle::from_section(
-                "Menu",
-                TextStyle {
-                    font: asset_server.load("fonts/NotoSans-Regular.ttf"),
-                    font_size: 40.0,
-                    color: Color::BLACK,
-                },
-            )
-            .with_text_alignment(TextAlignment::CENTER),));
-            parent
-                .spawn(ButtonBundle {
-                    style: Style {
-                        size: Size::new(Val::Percent(80.0), Val::Px(30.0)),
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
-                        margin: UiRect::all(Val::Px(15.0)),
-                        ..default()
-                    },
-                    background_color: Color::AQUAMARINE.into(),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    parent.spawn((TextBundle::from_section(
-                        "Save",
-                        TextStyle {
-                            font: asset_server.load("fonts/NotoSans-Regular.ttf"),
-                            font_size: 30.0,
-                            color: Color::BLACK,
-                        },
-                    )
-                    .with_text_alignment(TextAlignment::CENTER),));
-                });
-            parent
-                .spawn(ButtonBundle {
-                    style: Style {
-                        size: Size::new(Val::Percent(80.0), Val::Px(30.0)),
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
-                        margin: UiRect::all(Val::Px(15.0)),
-                        ..default()
-                    },
-                    background_color: Color::AQUAMARINE.into(),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    parent.spawn((TextBundle::from_section(
-                        "Options",
-                        TextStyle {
-                            font: asset_server.load("fonts/NotoSans-Regular.ttf"),
-                            font_size: 30.0,
-                            color: Color::BLACK,
-                        },
-                    )
-                    .with_text_alignment(TextAlignment::CENTER),));
-                });
-            parent
-                .spawn(ButtonBundle {
-                    style: Style {
-                        size: Size::new(Val::Percent(80.0), Val::Px(30.0)),
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
-                        margin: UiRect::all(Val::Px(15.0)),
-                        ..default()
-                    },
-                    background_color: Color::AQUAMARINE.into(),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    parent.spawn((TextBundle::from_section(
-                        "Back to Menu",
-                        TextStyle {
-                            font: asset_server.load("fonts/NotoSans-Regular.ttf"),
-                            font_size: 20.0,
-                            color: Color::BLACK,
-                        },
-                    )
-                    .with_text_alignment(TextAlignment::CENTER),));
-                });
-        });
+        })
+        .id();
+    return (entity, format!("m{pawn_color}{direction}"));
 }
 
-#[derive(Component, Default)]
-pub struct ScrollingList {
-    position: f32,
+pub fn create_collect_perl_puzzle_piece_entity(
+    commands: &mut Commands,
+    pawn_color: String,
+    script_res: &ScriptRes,
+    image_handler: &ImageMap,
+) -> (Entity, String) {
+    let entity = commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: Color::BLACK,
+                custom_size: Some(Vec2 { x: 100.0, y: 50.0 }),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(
+                -300.0,
+                300.0 - (script_res.script.len() as f32 * 50.0),
+                0.0,
+            ),
+            ..Default::default()
+        })
+        .insert(CollectPerlPuzzlePiece {
+            pawn_color: pawn_color.clone(),
+        })
+        .insert(PuzzlePiece)
+        .with_children(|parent| {
+            parent
+                .spawn(SpriteBundle {
+                    sprite: Sprite {
+                        color: Color::GREEN,
+                        custom_size: Some(Vec2 { x: 95.0, y: 45.0 }),
+                        ..Default::default()
+                    },
+                    transform: Transform::from_translation(Vec3::Z),
+                    ..Default::default()
+                })
+                .with_children(|parent| {
+                    parent.spawn(Text2dBundle {
+                        text: Text::from_section(
+                            format!("{} collects perl", pawn_color),
+                            TextStyle {
+                                font: image_handler.2.get(0).unwrap().clone(),
+                                font_size: 20.0,
+                                color: Color::BLACK,
+                            },
+                        )
+                        .with_alignment(TextAlignment::CENTER),
+                        transform: Transform::from_translation(Vec3::Z),
+                        ..Default::default()
+                    });
+                });
+        })
+        .id();
+    return (entity, format!("c{pawn_color}p"));
 }
 
-pub fn mouse_scroll(
-    mut mouse_wheel_events: EventReader<MouseWheel>,
-    mut query_list: Query<(&mut ScrollingList, &mut Style, &Children, &Node)>,
-    query_item: Query<&Node>,
+fn delete_puzzle_piece(
+    mut commands: Commands,
+    windows: Res<Windows>,
+    buttons: Res<Input<MouseButton>>,
+    mut game: ResMut<Game>,
+    mut script_res: ResMut<ScriptRes>,
+    mut puzzle_pieces: Query<(Entity, &mut Transform), With<PuzzlePiece>>,
 ) {
-    for mouse_wheel_event in mouse_wheel_events.iter() {
-        for (mut scrolling_list, mut style, children, uinode) in &mut query_list {
-            let items_height: f32 = children
-                .iter()
-                .map(|entity| query_item.get(*entity).unwrap().size().y)
-                .sum();
-            let panel_height = uinode.size().y;
-            let max_scroll = (items_height - panel_height).max(0.);
-            let dy = match mouse_wheel_event.unit {
-                MouseScrollUnit::Line => mouse_wheel_event.y * 20.,
-                MouseScrollUnit::Pixel => mouse_wheel_event.y,
-            };
-            scrolling_list.position += dy;
-            scrolling_list.position = scrolling_list.position.clamp(-max_scroll, 0.);
-            style.position.top = Val::Px(scrolling_list.position);
+    let window = windows.get_primary().unwrap();
+    if buttons.just_pressed(MouseButton::Right) {
+        if let Some(pos) = window.cursor_position() {
+            let window_size = Vec2::new(window.width(), window.height());
+            let world_position = pos - window_size / 2.;
+            info!(
+                "Mouse pos at Right Click: {} {}",
+                world_position.x, world_position.y
+            );
+            for (entity, transform) in &mut puzzle_pieces {
+                let transform_x_from = transform.translation.x - 50.0;
+                let transform_y_from = transform.translation.y + 25.0;
+                let transfrom_x_to = transform_x_from + 100.0;
+                let transfrom_y_to = transform_y_from - 50.0;
+                info!(
+                    "Puzzle piece position: {} {} {} {}",
+                    transform_x_from, transform_y_from, transfrom_x_to, transfrom_y_to
+                );
+                if world_position.x >= transform_x_from
+                    && world_position.x <= transfrom_x_to
+                    && world_position.y <= transform_y_from
+                    && world_position.y >= transfrom_y_to
+                {
+                    info!("Chosen");
+                    let result = game
+                        .puzzle
+                        .iter()
+                        .position(|&x| x == entity)
+                        .expect("Entity should be in the array");
+                    commands.entity(entity).despawn_recursive();
+                    game.puzzle.remove(result);
+                    script_res.script.remove(result);
+                    game.redraw_cond = RedrawPuzzle::Yes;
+                }
+            }
         }
     }
 }
 
-fn draw_level(parent: &mut ChildBuilder, asset_server: &Res<AssetServer>, game: Game) {
-    let cell_image_size = min(
-        MAX_LEVEL_WIDTH as u32 / game.columns,
-        MAX_LEVEL_HEIGHT as u32 / game.rows,
-    ) as f32;
-    for i in 0..game.rows {
-        for j in 0..game.columns {
-            let cell = game
-                .level_matrix
-                .get(i.try_into().unwrap(), j.try_into().unwrap())
-                .unwrap();
-            let img: UiImage;
-            let mut angle: f32 = 0.0;
-            let mut size_image_coeff_x = 1.0;
-            let mut size_image_coeff_y = 1.0;
-            let mut extra_move_x: f32 = 0.0;
-            let mut extra_move_y: f32 = 0.0;
-            match cell {
-                'Z' => {
-                    img = UiImage(asset_server.load("blocks/big_block.png"));
-                }
-                'Q' => {
-                    img = UiImage(asset_server.load("blocks/big_left_triangle.png"));
-                }
-                'W' => {
-                    img = UiImage(asset_server.load("blocks/big_left_triangle.png"));
-                    angle = PI / 2.0;
-                }
-                'E' => {
-                    img = UiImage(asset_server.load("blocks/big_left_triangle.png"));
-                    angle = PI;
-                }
-                'R' => {
-                    img = UiImage(asset_server.load("blocks/big_left_triangle.png"));
-                    angle = PI * 3.0 / 2.0;
-                }
-                'T' => {
-                    img = UiImage(asset_server.load("blocks/big_right_triangle.png"));
-                }
-                'Y' => {
-                    img = UiImage(asset_server.load("blocks/big_right_triangle.png"));
-                    angle = PI / 2.0;
-                }
-                'U' => {
-                    img = UiImage(asset_server.load("blocks/big_right_triangle.png"));
-                    angle = PI;
-                }
-                'I' => {
-                    img = UiImage(asset_server.load("blocks/big_right_triangle.png"));
-                    angle = PI * 3.0 / 2.0;
-                }
-                'A' => {
-                    img = UiImage(asset_server.load("blocks/big_left_half_slope.png"));
-                }
-                'S' => {
-                    img = UiImage(asset_server.load("blocks/big_left_half_slope.png"));
-                    angle = PI / 2.0;
-                }
-                'D' => {
-                    img = UiImage(asset_server.load("blocks/big_left_half_slope.png"));
-                    angle = PI;
-                }
-                'F' => {
-                    img = UiImage(asset_server.load("blocks/big_left_half_slope.png"));
-                    angle = PI * 3.0 / 2.0;
-                }
-                'G' => {
-                    img = UiImage(asset_server.load("blocks/big_right_half_slope.png"));
-                }
-                'H' => {
-                    img = UiImage(asset_server.load("blocks/big_right_half_slope.png"));
-                    angle = PI / 2.0;
-                }
-                'J' => {
-                    img = UiImage(asset_server.load("blocks/big_right_half_slope.png"));
-                    angle = PI;
-                }
-                'K' => {
-                    img = UiImage(asset_server.load("blocks/big_right_half_slope.png"));
-                    angle = PI * 3.0 / 2.0;
-                }
-                'z' => {
-                    img = UiImage(asset_server.load("blocks/small_block.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                }
-                'x' => {
-                    img = UiImage(asset_server.load("blocks/small_block.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 2.0;
-                }
-                'c' => {
-                    img = UiImage(asset_server.load("blocks/small_block.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 2.0;
-                    extra_move_y = cell_image_size / 2.0;
-                }
-                'v' => {
-                    img = UiImage(asset_server.load("blocks/small_block.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_y = cell_image_size / 2.0;
-                }
-                'q' => {
-                    img = UiImage(asset_server.load("blocks/small_left_triangle.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_y = cell_image_size / 2.0;
-                }
-                'w' => {
-                    img = UiImage(asset_server.load("blocks/small_left_triangle.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    angle = PI / 2.0;
-                }
-                'e' => {
-                    img = UiImage(asset_server.load("blocks/small_left_triangle.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 2.0;
-                    angle = PI;
-                }
-                'r' => {
-                    img = UiImage(asset_server.load("blocks/small_left_triangle.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 2.0;
-                    extra_move_y = cell_image_size / 2.0;
-                    angle = PI * 3.0 / 2.0;
-                }
-                't' => {
-                    img = UiImage(asset_server.load("blocks/small_right_triangle.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 2.0;
-                    extra_move_y = cell_image_size / 2.0;
-                }
-                'y' => {
-                    img = UiImage(asset_server.load("blocks/small_right_triangle.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_y = cell_image_size / 2.0;
-                    angle = PI / 2.0;
-                }
-                'u' => {
-                    img = UiImage(asset_server.load("blocks/small_right_triangle.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    angle = PI;
-                }
-                'i' => {
-                    img = UiImage(asset_server.load("blocks/small_right_triangle.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 2.0;
-                    angle = PI * 3.0 / 2.0;
-                }
-                'a' => {
-                    img = UiImage(asset_server.load("blocks/small_left_half_slope.png"));
-                    size_image_coeff_y = 0.5;
-                    extra_move_y = cell_image_size / 2.0;
-                }
-                's' => {
-                    img = UiImage(asset_server.load("blocks/small_left_half_slope.png"));
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = -cell_image_size / 4.0;
-                    extra_move_y = cell_image_size / 4.0;
-                    angle = PI / 2.0;
-                }
-                'd' => {
-                    img = UiImage(asset_server.load("blocks/small_left_half_slope.png"));
-                    size_image_coeff_y = 0.5;
-                    angle = PI;
-                }
-                'f' => {
-                    img = UiImage(asset_server.load("blocks/small_left_half_slope.png"));
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 4.0;
-                    extra_move_y = cell_image_size / 4.0;
-                    angle = PI * 3.0 / 2.0;
-                }
-                'g' => {
-                    img = UiImage(asset_server.load("blocks/small_right_half_slope.png"));
-                    size_image_coeff_y = 0.5;
-                    extra_move_y = cell_image_size / 2.0;
-                }
-                'h' => {
-                    img = UiImage(asset_server.load("blocks/small_right_half_slope.png"));
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = -cell_image_size / 4.0;
-                    extra_move_y = cell_image_size / 4.0;
-                    angle = PI / 2.0;
-                }
-                'j' => {
-                    img = UiImage(asset_server.load("blocks/small_right_half_slope.png"));
-                    size_image_coeff_y = 0.5;
-                    angle = PI;
-                }
-                'k' => {
-                    img = UiImage(asset_server.load("blocks/small_right_half_slope.png"));
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 4.0;
-                    extra_move_y = cell_image_size / 4.0;
-                    angle = PI * 3.0 / 2.0;
-                }
-                'b' => {
-                    img = UiImage(asset_server.load("blocks/lower_half_block.png"));
-                    size_image_coeff_y = 0.5;
-                    extra_move_y = cell_image_size / 2.0;
-                }
-                'n' => {
-                    img = UiImage(asset_server.load("blocks/lower_half_block.png"));
-                    size_image_coeff_y = 0.5;
-                    angle = PI / 2.0;
-                    extra_move_x = -cell_image_size / 4.0;
-                    extra_move_y = cell_image_size / 4.0;
-                }
-                'm' => {
-                    img = UiImage(asset_server.load("blocks/lower_half_block.png"));
-                    angle = PI;
-                    size_image_coeff_y = 0.5;
-                }
-                'l' => {
-                    img = UiImage(asset_server.load("blocks/lower_half_block.png"));
-                    angle = PI * 3.0 / 2.0;
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 4.0;
-                    extra_move_y = cell_image_size / 4.0;
-                }
-                'B' => {
-                    img = UiImage(asset_server.load("blocks/center_half_block.png"));
-                    size_image_coeff_x = 0.5;
-                    extra_move_x = cell_image_size / 4.0;
-                }
-                'N' => {
-                    img = UiImage(asset_server.load("blocks/center_half_block.png"));
-                    angle = PI / 2.0;
-                    size_image_coeff_x = 0.5;
-                    extra_move_x = cell_image_size / 4.0;
-                }
-                'p' => {
-                    img = UiImage(asset_server.load("pawns/green.png"));
-                }
-                'P' => {
-                    img = UiImage(asset_server.load("pawns/orange.png"));
-                }
-                'X' => {
-                    img = UiImage(asset_server.load("extra/stone.png"));
-                }
-                'o' => {
-                    img = UiImage(asset_server.load("extra/closed_shell.png"));
-                    size_image_coeff_y = 0.5;
-                    extra_move_y = cell_image_size / 2.0;
-                }
-                'O' => {
-                    img = UiImage(asset_server.load("extra/open_shell.png"));
-                }
-                'C' => {
-                    img = UiImage(asset_server.load("extra/perl.png"));
-                    size_image_coeff_x = 0.5;
-                    size_image_coeff_y = 0.5;
-                    extra_move_x = cell_image_size / 4.0;
-                    extra_move_y = cell_image_size / 4.0;
-                }
-                'V' => {
-                    img = UiImage(asset_server.load("extra/hexagon.png"));
-                }
-                _ => {
-                    print!("empty cell");
-                    continue;
+fn cond_to_update_puzzle_pieces(game: Res<Game>) -> ShouldRun {
+    if game.redraw_cond == RedrawPuzzle::Yes {
+        ShouldRun::Yes
+    } else {
+        ShouldRun::No
+    }
+}
+
+fn update_puzzle_pieces(
+    mut puzzle_pieces: Query<(Entity, &mut Transform), With<PuzzlePiece>>,
+    mut game: ResMut<Game>,
+) {
+    for (entity, mut transform) in &mut puzzle_pieces {
+        let index = game
+            .puzzle
+            .iter()
+            .position(|x| x == &entity)
+            .expect("Enity should be in the puzzle array of game resource");
+        *transform = Transform::from_xyz(-300.0, 300.0 - (index as f32 * 50.0), 0.0);
+    }
+    game.redraw_cond = RedrawPuzzle::No;
+}
+
+pub fn select_puzzle_piece(
+    windows: Res<Windows>,
+    buttons: Res<Input<MouseButton>>,
+    mut game: ResMut<Game>,
+    mut puzzle_pieces: Query<(Entity, &Transform, &mut Sprite), With<PuzzlePiece>>,
+) {
+    let window = windows.get_primary().unwrap();
+    if buttons.just_pressed(MouseButton::Left) {
+        if let Some(pos) = window.cursor_position() {
+            let window_size = Vec2::new(window.width(), window.height());
+            let world_position = pos - window_size / 2.;
+            for (_entity, _transform, mut sprite) in &mut puzzle_pieces {
+                sprite.color = Color::BLACK;
+            }
+            for (entity, transform, mut sprite) in &mut puzzle_pieces {
+                let transform_x_from = transform.translation.x - 50.0;
+                let transform_y_from = transform.translation.y + 25.0;
+                let transfrom_x_to = transform_x_from + 100.0;
+                let transfrom_y_to = transform_y_from - 50.0;
+                if world_position.x >= transform_x_from
+                    && world_position.x <= transfrom_x_to
+                    && world_position.y <= transform_y_from
+                    && world_position.y >= transfrom_y_to
+                {
+                    let index = game
+                        .puzzle
+                        .iter()
+                        .position(|&x| x == entity)
+                        .expect("Entity should be in the array");
+                    game.selected_puzzle_piece = index as i32;
+                    sprite.color = Color::YELLOW;
+                    info!("Selected puzzle {}", index);
                 }
             }
-            parent.spawn(ImageBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    position: UiRect {
-                        left: Val::Px(cell_image_size * (j) as f32 + extra_move_x + SHIFT_TO_RIGHT),
-                        top: Val::Px(cell_image_size * (i) as f32 + extra_move_y + SHIFT_DOWN),
-                        ..default()
-                    },
-                    size: Size {
-                        width: Val::Px(cell_image_size * size_image_coeff_x),
-                        height: Val::Px(cell_image_size * size_image_coeff_y),
-                    },
-                    ..default()
-                },
-                transform: Transform::from_rotation(Quat::from_rotation_z(angle)),
-                image: img,
-                ..default()
-            });
         }
     }
 }
