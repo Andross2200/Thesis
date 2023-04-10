@@ -1,13 +1,12 @@
 use bevy::prelude::*;
 
-use crate::{model::game_model::game::Game, utilities::script_plugin::ScriptRes};
+use crate::{model::game_model::game::Game, utilities::script_plugin::ScriptRes, view::image_handler::ImageMap};
 
 use super::{
     game_view_plugin::{
         create_collect_perl_puzzle_piece_entity, create_move_puzzle_piece_entity,
         BLOCK_TYPE_BUTTON_HEIGHT,
     },
-    image_handler::ImageMap,
 };
 
 const PAWNS: [&str; 2] = ["green", "orange"];

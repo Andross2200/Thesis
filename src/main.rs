@@ -6,8 +6,8 @@ mod view;
 
 use utilities::database_plugin::DatabasePlugin;
 use view::game_view::game_view_plugin::GameViewPlugin;
-use view::game_view::image_handler::ImageHandlerPlugin;
 use view::GameState;
+use view::image_handler::ImageHandlerPlugin;
 
 const MAX_LEVEL_WIDTH: f32 = 500.0;
 const MAX_LEVEL_HEIGHT: f32 = 550.0;

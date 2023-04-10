@@ -3,7 +3,6 @@ use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use super::{
     despawn_screen,
     game_view_plugin::{RedrawPuzzle, BLOCK_TYPE_BUTTON_HEIGHT},
-    image_handler::ImageMap,
     puzzle_pieces_panels::{
         close_puzzle_piece_panel, create_pawn_actions_panel, spawn_block, PuzzlePiecePanel,
     },
@@ -11,7 +10,7 @@ use super::{
 use crate::{
     model::game_model::game::{Game, GameCompleted},
     utilities::script_plugin::{reset_level, ScriptRes},
-    view::GameState,
+    view::{GameState, image_handler::ImageMap},
 };
 
 const LEVEL_DISPLAY_BUTTON_SIZE: f32 = 50.0;

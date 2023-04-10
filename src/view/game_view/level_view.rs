@@ -1,10 +1,9 @@
 use self::LevelControlButtonType::*;
 use super::despawn_screen;
-use super::image_handler::ImageMap;
 use crate::{
     model::game_model::game::{Game, LevelCell},
     utilities::script_plugin::{reset_level, ScriptRes, ScriptRunStatus},
-    view::GameState,
+    view::{GameState, image_handler::ImageMap},
     MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH, SHIFT_DOWN, SHIFT_TO_RIGHT,
 };
 use bevy::prelude::*;

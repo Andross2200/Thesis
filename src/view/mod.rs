@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 pub mod game_view;
+pub mod image_handler;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum GameState {

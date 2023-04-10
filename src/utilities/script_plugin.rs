@@ -9,14 +9,14 @@ use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
 use crate::{
     model::game_model::game::Game,
-    view::game_view::level_view::{
+    view::{game_view::level_view::{
         CellCollider, CellMovable, GreenPawn, OrangePawn, Perl, ShellType,
-    },
+    }, image_handler::ImageMap},
     MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH,
 };
 use crate::{
     model::game_model::game::GameCompleted,
-    view::game_view::{image_handler::ImageMap, level_view::ScoreText},
+    view::game_view::{level_view::ScoreText},
 };
 use crate::{SHIFT_DOWN, SHIFT_TO_RIGHT};
 

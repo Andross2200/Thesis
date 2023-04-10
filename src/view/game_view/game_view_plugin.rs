@@ -3,11 +3,11 @@ use crate::{
         game::Game,
         pizzle_pieces::{CollectPerlPuzzlePiece, MovementPuzzlePiece, PuzzlePiece},
     },
-    utilities::script_plugin::{ScriptPlugin, ScriptRes},
+    utilities::script_plugin::{ScriptPlugin, ScriptRes}, view::image_handler::ImageMap,
 };
 
 use super::{
-    image_handler::ImageMap, level_view::LevelViewPlugin, menu_panel_plugin::MenuViewPlugin,
+    level_view::LevelViewPlugin, menu_panel_plugin::MenuViewPlugin,
 };
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
