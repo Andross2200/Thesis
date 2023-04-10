@@ -133,8 +133,10 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                             .with_text_alignment(TextAlignment::CENTER),
                         );
                     })
-                    .insert(Name::new(format!("{color
-                    } collects perl")))
+                    .insert(Name::new(format!(
+                        "{color
+                    } collects perl"
+                    )))
                     .insert(PuzzlePieceButton);
             }
             parent
