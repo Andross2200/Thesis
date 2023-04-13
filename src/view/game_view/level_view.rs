@@ -210,9 +210,11 @@ fn get_image(letter: char, image_map: &ImageMap) -> UiImage {
 
 fn create_button_panel(commands: &mut Commands, image_map: &ImageMap) -> Entity {
     let mut buttons: Vec<Entity> = Vec::new();
-    let mut button_type_iterator = LevelControlButtonType::iterator();
-    for img in image_map.1.clone() {
-        let button: Entity = create_button(commands, img, *button_type_iterator.next().unwrap());
+    let mut button_type_iterator = LevelControlButtonType::iterator().peekable();
+    let mut image_ind = 0;
+    while button_type_iterator.peek().is_some() {
+        let button: Entity = create_button(commands, image_map.1.get(image_ind).unwrap().clone(), *button_type_iterator.next().unwrap());
+        image_ind = image_ind + 1;
         buttons.push(button);
     }
     let panel = commands

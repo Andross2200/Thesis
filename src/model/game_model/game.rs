@@ -22,6 +22,7 @@ pub struct LevelCell {
 
 #[derive(Resource)]
 pub struct Game {
+    pub level_id: i32,
     pub level_matrix: Matrix<LevelCell>,
     pub fen: String,
     pub rows: u32,
@@ -32,11 +33,13 @@ pub struct Game {
     pub redraw_cond: RedrawPuzzle,
     pub selected_puzzle_piece: i32,
     pub game_completed: GameCompleted,
+    pub solution_steps: i32,
+    pub solution: i32
 }
 
 impl Default for Game {
     fn default() -> Self {
-        Game::init_from_fen("5 5 ZZZZZ/Z1C1Z/Z1Z1Z/Z1CPZ/ZZZZZ 2".to_string())
+        Game::init_from_fen("5 5 ZZZZZ/Z1C1Z/Z1Z1Z/Z1CPZ/ZZZZZ 2".to_string(), 0)
     }
 }
 
@@ -51,7 +54,7 @@ impl Game {
 }
 
 impl Game {
-    pub fn init_from_fen(fen: String) -> Game {
+    pub fn init_from_fen(fen: String, id: i32) -> Game {
         let mut iter = fen.split_whitespace();
         let num_of_rows: u32 = iter.next().unwrap().parse().unwrap();
         let num_of_columns: u32 = iter.next().unwrap().parse().unwrap();
@@ -452,6 +455,7 @@ impl Game {
             }
         }
         Game {
+            level_id: id,
             level_matrix: matrix,
             fen,
             rows: num_of_rows,
@@ -462,6 +466,8 @@ impl Game {
             redraw_cond: RedrawPuzzle::No,
             selected_puzzle_piece: -1,
             game_completed: GameCompleted::No,
+            solution_steps: 0,
+            solution: 0
         }
     }
 }

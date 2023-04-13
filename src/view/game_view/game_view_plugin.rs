@@ -3,7 +3,7 @@ use crate::{
         game::Game,
         pizzle_pieces::{CollectPerlPuzzlePiece, MovementPuzzlePiece, PuzzlePiece},
     },
-    utilities::script_plugin::{ScriptPlugin, ScriptRes}, view::image_handler::ImageMap,
+    utilities::script_plugin::{ScriptPlugin, ScriptRes}, view::{image_handler::ImageMap, GameState},
 };
 
 use super::{
@@ -33,6 +33,7 @@ impl Plugin for GameViewPlugin {
                     .with_run_criteria(cond_to_update_puzzle_pieces)
                     .with_system(update_puzzle_pieces),
             )
+            .add_system_set(SystemSet::on_exit(GameState::Game).with_system(clean_puzzle_pieces))
             .add_system(select_puzzle_piece);
     }
 }
@@ -254,5 +255,11 @@ pub fn select_puzzle_piece(
                 }
             }
         }
+    }
+}
+
+fn clean_puzzle_pieces(mut commands: Commands, game: ResMut<Game>) {
+    for entity in game.puzzle.iter() {
+        commands.entity(*entity).despawn_recursive();
     }
 }

@@ -344,3 +344,9 @@ pub fn spawn_block(
         }
     }
 }
+
+pub fn clean_up_panel(mut commands: Commands, mut panel: Query<Entity, With<PuzzlePiecePanel>>) {
+    for p in &mut panel {
+        commands.entity(p).despawn_recursive();
+    }
+}
