@@ -26,6 +26,9 @@ const SINGLE_PANEL_WIDTH: f32 = 200.0;
 const SINGLE_PANEL_HEIGHT: f32 = 250.0;
 
 #[derive(Debug, Component)]
+struct GoBackButton;
+
+#[derive(Debug, Component)]
 struct SelectLevelButton {
     id: i32,
     fen: String,
@@ -61,7 +64,8 @@ impl Plugin for LevelSelectorPlugin {
             )
             .init_resource::<LevelSelectorData>()
             .add_system(level_selector_buttons)
-            .add_system(switch_page);
+            .add_system(switch_page)
+            .add_system(back_to_main_menu);
     }
 }
 
@@ -123,7 +127,7 @@ fn init_view(
                     color: Color::BLACK,
                 },
             ));
-        });
+        }).insert(GoBackButton);
 
     // Level panels
     create_levele_panels(
@@ -428,6 +432,29 @@ fn switch_page(
             Interaction::None => {
                 *back_color = BackgroundColor(Color::WHITE);
             }
+        }
+    }
+}
+
+fn back_to_main_menu(
+    mut interaction_query: Query<
+            (&Interaction, &mut BackgroundColor),
+            (Changed<Interaction>, With<Button>, With<GoBackButton>),
+        >,
+    mut game_state: ResMut<State<GameState>>
+) {
+    for (interaction, mut back_color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Clicked => {
+                *back_color = BackgroundColor(Color::YELLOW);
+                game_state.set(GameState::MainMenu).unwrap();
+            },
+            Interaction::Hovered => {
+                *back_color = BackgroundColor(Color::AQUAMARINE);
+            },
+            Interaction::None => {
+                *back_color = BackgroundColor(Color::BEIGE);
+            },
         }
     }
 }

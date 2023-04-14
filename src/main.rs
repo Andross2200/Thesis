@@ -9,6 +9,7 @@ use view::game_view::game_view_plugin::GameViewPlugin;
 use view::image_handler::ImageHandlerPlugin;
 use view::level_selector_view::level_selector_plugin::LevelSelectorPlugin;
 use view::GameState;
+use view::main_menu::main_menu_plugin::MainMenuPlugin;
 
 const MAX_LEVEL_WIDTH: f32 = 500.0;
 const MAX_LEVEL_HEIGHT: f32 = 550.0;
@@ -28,11 +29,12 @@ fn main() {
             ..default()
         }))
         .add_startup_system(setup)
-        .add_state(GameState::LevelSelector)
+        .add_state(GameState::MainMenu)
         .add_plugin(ImageHandlerPlugin)
         .add_plugin(DatabasePlugin)
         .add_plugin(GameViewPlugin)
         .add_plugin(LevelSelectorPlugin)
+        .add_plugin(MainMenuPlugin)
         .run();
 }
 
