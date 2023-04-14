@@ -73,6 +73,10 @@ pub fn update_score_for_tutorial_level(
         r"SELECT COUNT(tls.id) FROM tutorial_level_solutions tls
         WHERE tls.level_id = {level_id} AND player_id = {player_id};"
     );
+    let get_score_query = format!(
+        r"SELECT number_of_steps FROM tutorial_level_solutions tls
+        WHERE tls.level_id = {level_id} AND player_id = {player_id};"
+    );
     let update_query = format!(
         r"UPDATE tutorial_level_solutions
         SET number_of_steps = {steps}
@@ -100,9 +104,14 @@ pub fn update_score_for_tutorial_level(
             .expect("Query must be successful");
     } else {
         // Previously solved
-        transaction
-            .query_drop(update_query)
-            .expect("Query must be successful");
+        let prev_result: Option<i32> = transaction
+            .query_first(get_score_query)
+            .expect("Previous score should be in databse");
+        if prev_result.unwrap() > steps {
+            transaction
+                .query_drop(update_query)
+                .expect("Query must be successful");
+        }
     }
     transaction
         .commit()
