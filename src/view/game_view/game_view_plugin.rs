@@ -91,7 +91,7 @@ pub fn create_move_puzzle_piece_entity(
                 });
         })
         .id();
-    return (entity, format!("m{pawn_color}{direction}"));
+    (entity, format!("m{pawn_color}{direction}"))
 }
 
 pub fn create_collect_perl_puzzle_piece_entity(
@@ -146,7 +146,7 @@ pub fn create_collect_perl_puzzle_piece_entity(
                 });
         })
         .id();
-    return (entity, format!("c{pawn_color}p"));
+    (entity, format!("c{pawn_color}p"))
 }
 
 fn delete_puzzle_piece(
