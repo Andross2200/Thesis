@@ -1,9 +1,16 @@
+#![allow(clippy::type_complexity)]
+
 use bevy::{
+    app::AppExit,
     prelude::{
-        BuildChildren, Color, Commands, Component, NodeBundle, Plugin, Res, SystemSet, TextBundle, ButtonBundle, Query, Changed, With, Button, EventWriter, ResMut, State,
+        BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component, EventWriter,
+        NodeBundle, Plugin, Query, Res, ResMut, State, SystemSet, TextBundle, With,
     },
     text::TextStyle,
-    ui::{AlignItems, BackgroundColor, FlexDirection, PositionType, Size, Style, UiRect, Val, JustifyContent, Interaction}, app::AppExit,
+    ui::{
+        AlignItems, BackgroundColor, FlexDirection, Interaction, JustifyContent, PositionType,
+        Size, Style, UiRect, Val,
+    },
 };
 
 use crate::view::{despawn_screen, image_handler::ImageMap, GameState};
@@ -19,7 +26,7 @@ enum MenuButtonAction {
     LanguageForward,
     PlayerBack,
     PlayerForward,
-    Quit
+    Quit,
 }
 
 #[derive(Debug, Component)]
@@ -60,216 +67,252 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>) {
         })
         .insert(MainMenuView)
         .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                "Game Title",
-                TextStyle {
-                    font: image_handler.2.get(1).unwrap().clone(),
-                    font_size: 80.0,
-                    color: Color::BLACK,
-                },
-            ).with_style(Style {
-                margin: UiRect { top: Val::Px(40.0), bottom: Val::Px(50.0), ..Default::default() },
-                ..Default::default()
-            }));
+            parent.spawn(
+                TextBundle::from_section(
+                    "Game Title",
+                    TextStyle {
+                        font: image_handler.2.get(1).unwrap().clone(),
+                        font_size: 80.0,
+                        color: Color::BLACK,
+                    },
+                )
+                .with_style(Style {
+                    margin: UiRect {
+                        top: Val::Px(40.0),
+                        bottom: Val::Px(50.0),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }),
+            );
 
             // Tutorial mode Button
-            parent.spawn(ButtonBundle {
-                style: Style {
-                    size: Size {
-                        width: Val::Px(200.0),
-                        height: Val::Px(50.0)
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size {
+                            width: Val::Px(200.0),
+                            height: Val::Px(50.0),
+                        },
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
+                        justify_content: JustifyContent::Center,
+                        ..Default::default()
                     },
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
-                    justify_content: JustifyContent::Center,
                     ..Default::default()
-                },
-                ..Default::default()
-            }).with_children(|button| {
-                button.spawn(TextBundle::from_section(
-                    "Tutorial",
-                    TextStyle {
-                        font: image_handler.2.get(0).unwrap().clone(),
-                        font_size: 50.0,
-                        color: Color::BLACK
-                    }
-                ));
-            }).insert(MenuButtonAction::Tutorial);
+                })
+                .with_children(|button| {
+                    button.spawn(TextBundle::from_section(
+                        "Tutorial",
+                        TextStyle {
+                            font: image_handler.2.get(0).unwrap().clone(),
+                            font_size: 50.0,
+                            color: Color::BLACK,
+                        },
+                    ));
+                })
+                .insert(MenuButtonAction::Tutorial);
 
             // Challenge mode Button
-            parent.spawn(ButtonBundle {
-                style: Style {
-                    size: Size {
-                        width: Val::Px(200.0),
-                        height: Val::Px(50.0)
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size {
+                            width: Val::Px(200.0),
+                            height: Val::Px(50.0),
+                        },
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
+                        justify_content: JustifyContent::Center,
+                        ..Default::default()
                     },
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
-                    justify_content: JustifyContent::Center,
                     ..Default::default()
-                },
-                ..Default::default()
-            }).with_children(|button| {
-                button.spawn(TextBundle::from_section(
-                    "Challenge",
-                    TextStyle {
-                        font: image_handler.2.get(0).unwrap().clone(),
-                        font_size: 50.0,
-                        color: Color::BLACK
-                    }
-                ));
-            }).insert(MenuButtonAction::Challenge);
+                })
+                .with_children(|button| {
+                    button.spawn(TextBundle::from_section(
+                        "Challenge",
+                        TextStyle {
+                            font: image_handler.2.get(0).unwrap().clone(),
+                            font_size: 50.0,
+                            color: Color::BLACK,
+                        },
+                    ));
+                })
+                .insert(MenuButtonAction::Challenge);
 
             // Multiplayer mode Button
-            parent.spawn(ButtonBundle {
-                style: Style {
-                    size: Size {
-                        width: Val::Px(200.0),
-                        height: Val::Px(50.0)
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size {
+                            width: Val::Px(200.0),
+                            height: Val::Px(50.0),
+                        },
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
+                        justify_content: JustifyContent::Center,
+                        ..Default::default()
                     },
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
-                    justify_content: JustifyContent::Center,
                     ..Default::default()
-                },
-                ..Default::default()
-            }).with_children(|button| {
-                button.spawn(TextBundle::from_section(
-                    "Multiplayer",
-                    TextStyle {
-                        font: image_handler.2.get(0).unwrap().clone(),
-                        font_size: 50.0,
-                        color: Color::BLACK
-                    }
-                ));
-            }).insert(MenuButtonAction::Multiplayer);
+                })
+                .with_children(|button| {
+                    button.spawn(TextBundle::from_section(
+                        "Multiplayer",
+                        TextStyle {
+                            font: image_handler.2.get(0).unwrap().clone(),
+                            font_size: 50.0,
+                            color: Color::BLACK,
+                        },
+                    ));
+                })
+                .insert(MenuButtonAction::Multiplayer);
 
             // Change language panel
-            parent.spawn(NodeBundle {
-                style: Style {
-                    size: Size {
-                        width: Val::Px(330.0),
-                        height: Val::Px(60.0)
-                    },
-                    align_items: AlignItems::Center,
-                    margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
-                    justify_content: JustifyContent::Center,
-                    ..Default::default()
-                },
-                background_color: BackgroundColor(Color::WHITE),
-                ..Default::default()
-            }).with_children(|node| {
-                node.spawn(ButtonBundle {
+            parent
+                .spawn(NodeBundle {
                     style: Style {
-                        size : Size::new(Val::Px(50.0), Val::Px(50.0)),
-                        margin: UiRect::all(Val::Px(5.0)),
+                        size: Size {
+                            width: Val::Px(330.0),
+                            height: Val::Px(60.0),
+                        },
+                        align_items: AlignItems::Center,
+                        margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
+                        justify_content: JustifyContent::Center,
                         ..Default::default()
                     },
-                    image: image_handler.1.get(7).unwrap().clone(),
+                    background_color: BackgroundColor(Color::WHITE),
                     ..Default::default()
-                }).insert(MenuButtonAction::LanguageBack);
-                node.spawn(TextBundle::from_section(
-                    "Language: English",
-                    TextStyle {
-                        font: image_handler.2.get(0).unwrap().clone(),
-                        font_size: 30.0,
-                        color: Color::BLACK
-                    }
-                ).with_style(Style {
-                    margin: UiRect::all(Val::Px(5.0)),
-                    ..Default::default()
-                }));
-                node.spawn(ButtonBundle {
-                    style: Style {
-                        size : Size::new(Val::Px(50.0), Val::Px(50.0)),
-                        margin: UiRect::all(Val::Px(5.0)),
+                })
+                .with_children(|node| {
+                    node.spawn(ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..Default::default()
+                        },
+                        image: image_handler.1.get(7).unwrap().clone(),
                         ..Default::default()
-                    },
-                    image: image_handler.1.get(8).unwrap().clone(),
-                    ..Default::default()
-                }).insert(MenuButtonAction::LanguageForward);
-            });
+                    })
+                    .insert(MenuButtonAction::LanguageBack);
+                    node.spawn(
+                        TextBundle::from_section(
+                            "Language: English",
+                            TextStyle {
+                                font: image_handler.2.get(0).unwrap().clone(),
+                                font_size: 30.0,
+                                color: Color::BLACK,
+                            },
+                        )
+                        .with_style(Style {
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..Default::default()
+                        }),
+                    );
+                    node.spawn(ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..Default::default()
+                        },
+                        image: image_handler.1.get(8).unwrap().clone(),
+                        ..Default::default()
+                    })
+                    .insert(MenuButtonAction::LanguageForward);
+                });
 
             // Change player panel
-            parent.spawn(NodeBundle {
-                style: Style {
-                    size: Size {
-                        width: Val::Px(330.0),
-                        height: Val::Px(60.0)
-                    },
-                    align_items: AlignItems::Center,
-                    margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
-                    justify_content: JustifyContent::Center,
-                    ..Default::default()
-                },
-                background_color: BackgroundColor(Color::WHITE),
-                ..Default::default()
-            }).with_children(|node| {
-                node.spawn(ButtonBundle {
+            parent
+                .spawn(NodeBundle {
                     style: Style {
-                        size : Size::new(Val::Px(50.0), Val::Px(50.0)),
-                        margin: UiRect::all(Val::Px(5.0)),
+                        size: Size {
+                            width: Val::Px(330.0),
+                            height: Val::Px(60.0),
+                        },
+                        align_items: AlignItems::Center,
+                        margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
+                        justify_content: JustifyContent::Center,
                         ..Default::default()
                     },
-                    image: image_handler.1.get(7).unwrap().clone(),
+                    background_color: BackgroundColor(Color::WHITE),
                     ..Default::default()
-                }).insert(MenuButtonAction::PlayerBack);
-                node.spawn(TextBundle::from_section(
-                    "Player: Bobby436",
-                    TextStyle {
-                        font: image_handler.2.get(0).unwrap().clone(),
-                        font_size: 30.0,
-                        color: Color::BLACK
-                    }
-                ).with_style(Style {
-                    margin: UiRect::all(Val::Px(5.0)),
-                    ..Default::default()
-                }));
-                node.spawn(ButtonBundle {
-                    style: Style {
-                        size : Size::new(Val::Px(50.0), Val::Px(50.0)),
-                        margin: UiRect::all(Val::Px(5.0)),
+                })
+                .with_children(|node| {
+                    node.spawn(ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..Default::default()
+                        },
+                        image: image_handler.1.get(7).unwrap().clone(),
                         ..Default::default()
-                    },
-                    image: image_handler.1.get(8).unwrap().clone(),
-                    ..Default::default()
-                }).insert(MenuButtonAction::PlayerForward);
-            });
+                    })
+                    .insert(MenuButtonAction::PlayerBack);
+                    node.spawn(
+                        TextBundle::from_section(
+                            "Player: Bobby436",
+                            TextStyle {
+                                font: image_handler.2.get(0).unwrap().clone(),
+                                font_size: 30.0,
+                                color: Color::BLACK,
+                            },
+                        )
+                        .with_style(Style {
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..Default::default()
+                        }),
+                    );
+                    node.spawn(ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..Default::default()
+                        },
+                        image: image_handler.1.get(8).unwrap().clone(),
+                        ..Default::default()
+                    })
+                    .insert(MenuButtonAction::PlayerForward);
+                });
 
             // Exit game button
-            parent.spawn(ButtonBundle {
-                style: Style {
-                    size: Size {
-                        width: Val::Px(200.0),
-                        height: Val::Px(50.0)
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size {
+                            width: Val::Px(200.0),
+                            height: Val::Px(50.0),
+                        },
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
+                        justify_content: JustifyContent::Center,
+                        ..Default::default()
                     },
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
-                    justify_content: JustifyContent::Center,
                     ..Default::default()
-                },
-                ..Default::default()
-            }).with_children(|button| {
-                button.spawn(TextBundle::from_section(
-                    "Exit to Desktop",
-                    TextStyle {
-                        font: image_handler.2.get(0).unwrap().clone(),
-                        font_size: 35.0,
-                        color: Color::BLACK
-                    }
-                ));
-            }).insert(MenuButtonAction::Quit);
+                })
+                .with_children(|button| {
+                    button.spawn(TextBundle::from_section(
+                        "Exit to Desktop",
+                        TextStyle {
+                            font: image_handler.2.get(0).unwrap().clone(),
+                            font_size: 35.0,
+                            color: Color::BLACK,
+                        },
+                    ));
+                })
+                .insert(MenuButtonAction::Quit);
         });
 }
 
 fn menu_actions(
-    mut interaction_query: Query<(&Interaction, &MenuButtonAction, &mut BackgroundColor), (Changed<Interaction>, With<Button>)>,
+    mut interaction_query: Query<
+        (&Interaction, &MenuButtonAction, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
     mut app_exit_events: EventWriter<AppExit>,
-    mut game_state: ResMut<State<GameState>>
+    mut game_state: ResMut<State<GameState>>,
 ) {
     for (interaction, button_action, mut back_color) in &mut interaction_query {
         match *interaction {
@@ -278,24 +321,24 @@ fn menu_actions(
                 match *button_action {
                     MenuButtonAction::Tutorial => {
                         game_state.set(GameState::LevelSelector).unwrap();
-                    },
-                    MenuButtonAction::Challenge => {},
-                    MenuButtonAction::Multiplayer => {},
-                    MenuButtonAction::LanguageBack => {},
-                    MenuButtonAction::LanguageForward => {},
-                    MenuButtonAction::PlayerBack => {},
-                    MenuButtonAction::PlayerForward => {},
+                    }
+                    MenuButtonAction::Challenge => {}
+                    MenuButtonAction::Multiplayer => {}
+                    MenuButtonAction::LanguageBack => {}
+                    MenuButtonAction::LanguageForward => {}
+                    MenuButtonAction::PlayerBack => {}
+                    MenuButtonAction::PlayerForward => {}
                     MenuButtonAction::Quit => {
                         app_exit_events.send(AppExit);
-                    },
+                    }
                 }
-            },
+            }
             Interaction::Hovered => {
                 *back_color = BackgroundColor(Color::AQUAMARINE);
-            },
+            }
             Interaction::None => {
                 *back_color = BackgroundColor(Color::WHITE);
-            },
+            }
         }
     }
 }

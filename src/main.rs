@@ -8,8 +8,8 @@ use utilities::database_plugin::DatabasePlugin;
 use view::game_view::game_view_plugin::GameViewPlugin;
 use view::image_handler::ImageHandlerPlugin;
 use view::level_selector_view::level_selector_plugin::LevelSelectorPlugin;
-use view::GameState;
 use view::main_menu::main_menu_plugin::MainMenuPlugin;
+use view::GameState;
 
 const MAX_LEVEL_WIDTH: f32 = 500.0;
 const MAX_LEVEL_HEIGHT: f32 = 550.0;

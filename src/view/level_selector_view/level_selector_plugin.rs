@@ -127,7 +127,8 @@ fn init_view(
                     color: Color::BLACK,
                 },
             ));
-        }).insert(GoBackButton);
+        })
+        .insert(GoBackButton);
 
     // Level panels
     create_levele_panels(
@@ -438,23 +439,23 @@ fn switch_page(
 
 fn back_to_main_menu(
     mut interaction_query: Query<
-            (&Interaction, &mut BackgroundColor),
-            (Changed<Interaction>, With<Button>, With<GoBackButton>),
-        >,
-    mut game_state: ResMut<State<GameState>>
+        (&Interaction, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>, With<GoBackButton>),
+    >,
+    mut game_state: ResMut<State<GameState>>,
 ) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
                 game_state.set(GameState::MainMenu).unwrap();
-            },
+            }
             Interaction::Hovered => {
                 *back_color = BackgroundColor(Color::AQUAMARINE);
-            },
+            }
             Interaction::None => {
                 *back_color = BackgroundColor(Color::BEIGE);
-            },
+            }
         }
     }
 }
