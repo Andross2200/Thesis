@@ -1,20 +1,31 @@
+#![allow(clippy::type_complexity)]
+
+use std::borrow::BorrowMut;
+
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
 use super::{
     despawn_screen,
     game_view_plugin::{RedrawPuzzle, BLOCK_TYPE_BUTTON_HEIGHT},
     puzzle_pieces_panels::{
-        close_puzzle_piece_panel, create_pawn_actions_panel, spawn_block, PuzzlePiecePanel,
+        clean_up_panel, close_puzzle_piece_panel, create_pawn_actions_panel, spawn_block,
+        PuzzlePiecePanel,
     },
 };
 use crate::{
     model::game_model::game::{Game, GameCompleted},
-    utilities::script_plugin::{reset_level, ScriptRes},
-    view::{GameState, image_handler::ImageMap},
+    utilities::{
+        database_plugin::{update_score_for_tutorial_level, DatabaseConnection},
+        script_plugin::{reset_level, ScriptRes},
+    },
+    view::{image_handler::ImageMap, GameState},
 };
 
 const LEVEL_DISPLAY_BUTTON_SIZE: f32 = 50.0;
 const LEVEL_DISPLAY_BUTTON_MARGIN: f32 = 25.0;
+
+#[derive(Debug, Component)]
+struct GoBackButton;
 
 #[derive(Component)]
 pub struct MenuView;
@@ -47,6 +58,7 @@ impl Plugin for MenuViewPlugin {
             .add_system_set(
                 SystemSet::on_exit(GameState::Game).with_system(despawn_screen::<MenuView>),
             )
+            .add_system_set(SystemSet::on_exit(GameState::Game).with_system(clean_up_panel))
             .add_system(puzzle_type_buttons)
             .add_system(close_puzzle_piece_panel)
             .add_system(spawn_block)
@@ -56,11 +68,12 @@ impl Plugin for MenuViewPlugin {
                     .with_run_criteria(cond_complete_game_button)
                     .with_system(complete_game_button),
             )
+            .add_system(no_save_exit)
             .init_resource::<HidingPanel>();
     }
 }
 
-fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, asset_server: Res<AssetServer>) {
+fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -79,7 +92,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, asset_server: 
                 },
                 ..default()
             },
-            background_color: Color::WHITE.into(),
+            background_color: BackgroundColor(Color::BEIGE),
             ..default()
         })
         .with_children(|parent| {
@@ -178,7 +191,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, asset_server: 
                                 margin: UiRect::all(Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN)),
                                 ..Default::default()
                             },
-                            image: UiImage(asset_server.load("buttons/arrow_up.png")),
+                            image: image_map.1.get(5).unwrap().clone(),
                             ..Default::default()
                         })
                         .insert(PuzzleMovementButtons::Up);
@@ -192,7 +205,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, asset_server: 
                                 margin: UiRect::all(Val::Px(LEVEL_DISPLAY_BUTTON_MARGIN)),
                                 ..Default::default()
                             },
-                            image: UiImage(asset_server.load("buttons/arrow_down.png")),
+                            image: image_map.1.get(6).unwrap().clone(),
                             ..Default::default()
                         })
                         .insert(PuzzleMovementButtons::Down);
@@ -252,7 +265,8 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, asset_server: 
                         },
                     )
                     .with_text_alignment(TextAlignment::CENTER),));
-                });
+                })
+                .insert(GoBackButton);
         })
         .insert(MenuView);
 }
@@ -361,13 +375,50 @@ fn complete_game_button(
             With<CompleteLevelButton>,
         ),
     >,
+    game: Res<Game>,
+    mut db_conn: ResMut<DatabaseConnection>,
+    mut game_state: ResMut<State<GameState>>,
 ) {
     for (interaction, mut color) in &mut interaction_query {
         match *interaction {
-            Interaction::Clicked => {}
-            Interaction::Hovered => {}
-            Interaction::None => {
+            Interaction::Clicked => {
+                *color = BackgroundColor(Color::YELLOW);
+                update_score_for_tutorial_level(
+                    db_conn.borrow_mut(),
+                    1,
+                    game.level_id,
+                    game.solution,
+                );
+                game_state.set(GameState::LevelSelector).unwrap();
+            }
+            Interaction::Hovered => {
                 *color = BackgroundColor(Color::AQUAMARINE);
+            }
+            Interaction::None => {
+                *color = BackgroundColor(Color::WHITE);
+            }
+        }
+    }
+}
+
+fn no_save_exit(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor),
+        (With<Button>, With<GoBackButton>),
+    >,
+    mut game_state: ResMut<State<GameState>>,
+) {
+    for (interaction, mut back_color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Clicked => {
+                *back_color = BackgroundColor(Color::YELLOW);
+                game_state.set(GameState::LevelSelector).unwrap();
+            }
+            Interaction::Hovered => {
+                *back_color = BackgroundColor(Color::AQUAMARINE);
+            }
+            Interaction::None => {
+                *back_color = BackgroundColor(Color::WHITE);
             }
         }
     }

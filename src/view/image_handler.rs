@@ -111,10 +111,17 @@ fn load_images(mut commands: Commands, asset_server: Res<AssetServer>) {
         UiImage(asset_server.load("buttons/step_forward.png")),
         UiImage(asset_server.load("buttons/pause.png")),
         UiImage(asset_server.load("buttons/stop.png")),
+        UiImage(asset_server.load("buttons/arrow_up.png")),
+        UiImage(asset_server.load("buttons/arrow_down.png")),
+        UiImage(asset_server.load("buttons/arrow_left.png")),
+        UiImage(asset_server.load("buttons/arrow_right.png")),
     ];
 
     // Fonts
-    let fonts: Vec<Handle<Font>> = vec![asset_server.load("fonts/NotoSans-Regular.ttf")];
+    let fonts: Vec<Handle<Font>> = vec![
+        asset_server.load("fonts/NotoSans-Regular.ttf"),
+        asset_server.load("fonts/NotoSans-SemiBold.ttf"),
+    ];
 
     commands.insert_resource(ImageMap(image_map, buttons, fonts));
 }

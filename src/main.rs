@@ -6,8 +6,9 @@ mod view;
 
 use utilities::database_plugin::DatabasePlugin;
 use view::game_view::game_view_plugin::GameViewPlugin;
-use view::GameState;
 use view::image_handler::ImageHandlerPlugin;
+use view::level_selector_view::level_selector_plugin::LevelSelectorPlugin;
+use view::GameState;
 
 const MAX_LEVEL_WIDTH: f32 = 500.0;
 const MAX_LEVEL_HEIGHT: f32 = 550.0;
@@ -19,16 +20,19 @@ pub struct MainCamera;
 
 fn main() {
     App::new()
-        // .add_plugins(DefaultPlugins.set(WindowPlugin {
-        //     window: WindowDescriptor {  mode: WindowMode::Fullscreen, ..default() },
-        //     ..default()
-        // }))
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                mode: WindowMode::Fullscreen,
+                ..default()
+            },
+            ..default()
+        }))
         .add_startup_system(setup)
-        .add_state(GameState::Game)
+        .add_state(GameState::LevelSelector)
         .add_plugin(ImageHandlerPlugin)
-        .add_plugin(GameViewPlugin)
         .add_plugin(DatabasePlugin)
+        .add_plugin(GameViewPlugin)
+        .add_plugin(LevelSelectorPlugin)
         .run();
 }
 

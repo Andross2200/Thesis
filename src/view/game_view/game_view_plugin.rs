@@ -3,12 +3,11 @@ use crate::{
         game::Game,
         pizzle_pieces::{CollectPerlPuzzlePiece, MovementPuzzlePiece, PuzzlePiece},
     },
-    utilities::script_plugin::{ScriptPlugin, ScriptRes}, view::image_handler::ImageMap,
+    utilities::script_plugin::{ScriptPlugin, ScriptRes},
+    view::{image_handler::ImageMap, GameState},
 };
 
-use super::{
-    level_view::LevelViewPlugin, menu_panel_plugin::MenuViewPlugin,
-};
+use super::{level_view::LevelViewPlugin, menu_panel_plugin::MenuViewPlugin};
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
 #[derive(PartialEq, Eq)]
@@ -33,6 +32,7 @@ impl Plugin for GameViewPlugin {
                     .with_run_criteria(cond_to_update_puzzle_pieces)
                     .with_system(update_puzzle_pieces),
             )
+            .add_system_set(SystemSet::on_exit(GameState::Game).with_system(clean_puzzle_pieces))
             .add_system(select_puzzle_piece);
     }
 }
@@ -91,7 +91,7 @@ pub fn create_move_puzzle_piece_entity(
                 });
         })
         .id();
-    return (entity, format!("m{pawn_color}{direction}"));
+    (entity, format!("m{pawn_color}{direction}"))
 }
 
 pub fn create_collect_perl_puzzle_piece_entity(
@@ -132,7 +132,7 @@ pub fn create_collect_perl_puzzle_piece_entity(
                 .with_children(|parent| {
                     parent.spawn(Text2dBundle {
                         text: Text::from_section(
-                            format!("{} collects perl", pawn_color),
+                            format!("{pawn_color} collects perl"),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 20.0,
@@ -146,7 +146,7 @@ pub fn create_collect_perl_puzzle_piece_entity(
                 });
         })
         .id();
-    return (entity, format!("c{pawn_color}p"));
+    (entity, format!("c{pawn_color}p"))
 }
 
 fn delete_puzzle_piece(
@@ -254,5 +254,11 @@ pub fn select_puzzle_piece(
                 }
             }
         }
+    }
+}
+
+fn clean_puzzle_pieces(mut commands: Commands, game: ResMut<Game>) {
+    for entity in game.puzzle.iter() {
+        commands.entity(*entity).despawn_recursive();
     }
 }
