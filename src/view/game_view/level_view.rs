@@ -1,9 +1,11 @@
+#![allow(clippy::type_complexity)]
+
 use self::LevelControlButtonType::*;
 use super::despawn_screen;
 use crate::{
     model::game_model::game::{Game, LevelCell},
     utilities::script_plugin::{reset_level, ScriptRes, ScriptRunStatus},
-    view::{GameState, image_handler::ImageMap},
+    view::{image_handler::ImageMap, GameState},
     MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH, SHIFT_DOWN, SHIFT_TO_RIGHT,
 };
 use bevy::prelude::*;
@@ -213,8 +215,12 @@ fn create_button_panel(commands: &mut Commands, image_map: &ImageMap) -> Entity 
     let mut button_type_iterator = LevelControlButtonType::iterator().peekable();
     let mut image_ind = 0;
     while button_type_iterator.peek().is_some() {
-        let button: Entity = create_button(commands, image_map.1.get(image_ind).unwrap().clone(), *button_type_iterator.next().unwrap());
-        image_ind = image_ind + 1;
+        let button: Entity = create_button(
+            commands,
+            image_map.1.get(image_ind).unwrap().clone(),
+            *button_type_iterator.next().unwrap(),
+        );
+        image_ind += 1;
         buttons.push(button);
     }
     let panel = commands

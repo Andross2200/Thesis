@@ -1,12 +1,15 @@
+#![allow(clippy::type_complexity)]
+
 use bevy::prelude::*;
 
-use crate::{model::game_model::game::Game, utilities::script_plugin::ScriptRes, view::image_handler::ImageMap};
+use crate::{
+    model::game_model::game::Game, utilities::script_plugin::ScriptRes,
+    view::image_handler::ImageMap,
+};
 
-use super::{
-    game_view_plugin::{
-        create_collect_perl_puzzle_piece_entity, create_move_puzzle_piece_entity,
-        BLOCK_TYPE_BUTTON_HEIGHT,
-    },
+use super::game_view_plugin::{
+    create_collect_perl_puzzle_piece_entity, create_move_puzzle_piece_entity,
+    BLOCK_TYPE_BUTTON_HEIGHT,
 };
 
 const PAWNS: [&str; 2] = ["green", "orange"];

@@ -3,12 +3,11 @@ use crate::{
         game::Game,
         pizzle_pieces::{CollectPerlPuzzlePiece, MovementPuzzlePiece, PuzzlePiece},
     },
-    utilities::script_plugin::{ScriptPlugin, ScriptRes}, view::{image_handler::ImageMap, GameState},
+    utilities::script_plugin::{ScriptPlugin, ScriptRes},
+    view::{image_handler::ImageMap, GameState},
 };
 
-use super::{
-    level_view::LevelViewPlugin, menu_panel_plugin::MenuViewPlugin,
-};
+use super::{level_view::LevelViewPlugin, menu_panel_plugin::MenuViewPlugin};
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
 #[derive(PartialEq, Eq)]
@@ -133,7 +132,7 @@ pub fn create_collect_perl_puzzle_piece_entity(
                 .with_children(|parent| {
                     parent.spawn(Text2dBundle {
                         text: Text::from_section(
-                            format!("{} collects perl", pawn_color),
+                            format!("{pawn_color} collects perl"),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 20.0,

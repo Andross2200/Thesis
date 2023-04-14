@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity, clippy::too_many_arguments)]
+
 use std::{
     borrow::{Borrow, BorrowMut},
     cmp::min,
@@ -9,15 +11,15 @@ use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
 use crate::{
     model::game_model::game::Game,
-    view::{game_view::level_view::{
-        CellCollider, CellMovable, GreenPawn, OrangePawn, Perl, ShellType,
-    }, image_handler::ImageMap},
+    view::{
+        game_view::level_view::{
+            CellCollider, CellMovable, GreenPawn, OrangePawn, Perl, ShellType,
+        },
+        image_handler::ImageMap,
+    },
     MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH,
 };
-use crate::{
-    model::game_model::game::GameCompleted,
-    view::game_view::{level_view::ScoreText},
-};
+use crate::{model::game_model::game::GameCompleted, view::game_view::level_view::ScoreText};
 use crate::{SHIFT_DOWN, SHIFT_TO_RIGHT};
 
 const TIMESTEP_1_PER_SECOND: f64 = 1.0;
@@ -149,7 +151,7 @@ pub fn run_script(
                         image_size,
                     ) {
                         move_pawn(green_pawn, direction, image_size);
-                        game.solution_steps = game.solution_steps + 1;
+                        game.solution_steps += 1;
                     } else {
                         reset_level(&mut script_res, &mut game);
                     }
@@ -167,7 +169,7 @@ pub fn run_script(
                         image_size,
                     ) {
                         move_pawn(green_pawn, direction, image_size);
-                        game.solution_steps = game.solution_steps + 1;
+                        game.solution_steps += 1;
                     } else {
                         reset_level(&mut script_res, &mut game);
                     }
@@ -185,7 +187,7 @@ pub fn run_script(
                         image_size,
                     ) {
                         move_pawn(green_pawn, direction, image_size);
-                        game.solution_steps = game.solution_steps + 1;
+                        game.solution_steps += 1;
                     } else {
                         reset_level(&mut script_res, &mut game);
                     }
@@ -203,7 +205,7 @@ pub fn run_script(
                         image_size,
                     ) {
                         move_pawn(green_pawn, Direction::Right, image_size);
-                        game.solution_steps = game.solution_steps + 1;
+                        game.solution_steps += 1;
                     } else {
                         reset_level(&mut script_res, &mut game);
                     }
@@ -216,7 +218,7 @@ pub fn run_script(
                         image_size,
                         run_backwards,
                     );
-                    game.solution_steps = game.solution_steps + 1;
+                    game.solution_steps += 1;
                 }
                 _ => {}
             }
@@ -241,7 +243,7 @@ pub fn run_script(
                         image_size,
                     ) {
                         move_pawn(orange_pawn, direction, image_size);
-                        game.solution_steps = game.solution_steps + 1;
+                        game.solution_steps += 1;
                     } else {
                         reset_level(&mut script_res, &mut game);
                     }
@@ -259,7 +261,7 @@ pub fn run_script(
                         image_size,
                     ) {
                         move_pawn(orange_pawn, direction, image_size);
-                        game.solution_steps = game.solution_steps + 1;
+                        game.solution_steps += 1;
                     } else {
                         reset_level(&mut script_res, &mut game);
                     }
@@ -277,7 +279,7 @@ pub fn run_script(
                         image_size,
                     ) {
                         move_pawn(orange_pawn, direction, image_size);
-                        game.solution_steps = game.solution_steps + 1;
+                        game.solution_steps += 1;
                     } else {
                         reset_level(&mut script_res, &mut game);
                     }
@@ -295,7 +297,7 @@ pub fn run_script(
                         image_size,
                     ) {
                         move_pawn(orange_pawn, direction, image_size);
-                        game.solution_steps = game.solution_steps + 1;
+                        game.solution_steps += 1;
                     } else {
                         reset_level(&mut script_res, &mut game);
                     }
@@ -308,7 +310,7 @@ pub fn run_script(
                         image_size,
                         run_backwards,
                     );
-                    game.solution_steps = game.solution_steps + 1;
+                    game.solution_steps += 1;
                 }
                 _ => {}
             }

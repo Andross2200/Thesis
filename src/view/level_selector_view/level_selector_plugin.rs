@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+
 use std::borrow::{Borrow, BorrowMut};
 
 use crate::utilities::database_plugin::{get_all_levels_for_player, AllLevels};
@@ -261,7 +263,7 @@ fn create_levele_panels(
             let level_description = commands
                 .spawn(
                     TextBundle::from_section(
-                        format!("{}", level_info.level_description),
+                        level_info.level_description.to_string(),
                         TextStyle {
                             font: image_handler.2.get(0).unwrap().clone(),
                             font_size: 20.0,
@@ -277,12 +279,11 @@ fn create_levele_panels(
                     }),
                 )
                 .id();
-            let score;
-            if level_info.number_of_steps.is_some() {
-                score = format!("Completed in {} steps", level_info.number_of_steps.unwrap());
+            let score = if level_info.number_of_steps.is_some() {
+                format!("Completed in {} steps", level_info.number_of_steps.unwrap())
             } else {
-                score = "Not completed".to_string();
-            }
+                "Not completed".to_string()
+            };
             let score_label = commands
                 .spawn(
                     TextBundle::from_section(
@@ -332,7 +333,7 @@ fn create_levele_panels(
                     id: level_info.level_id,
                     fen: level_info.fen.clone(),
                 });
-                last_completed = last_completed + 1;
+                last_completed += 1;
             } else if level_info.number_of_steps.is_none() && item_counter == (last_completed + 1) {
                 commands.entity(select_button).insert(SelectLevelButton {
                     id: level_info.level_id,
@@ -347,10 +348,10 @@ fn create_levele_panels(
             ]);
 
             level_selector_data.panels.push(panel);
-            item_counter = item_counter + 1;
-            item_in_row_counter = item_in_row_counter + 1;
+            item_counter += 1;
+            item_in_row_counter += 1;
         }
-        row_counter = row_counter + 1;
+        row_counter += 1;
     }
 }
 

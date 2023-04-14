@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+
 use std::borrow::BorrowMut;
 
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
@@ -6,19 +8,23 @@ use super::{
     despawn_screen,
     game_view_plugin::{RedrawPuzzle, BLOCK_TYPE_BUTTON_HEIGHT},
     puzzle_pieces_panels::{
-        close_puzzle_piece_panel, create_pawn_actions_panel, spawn_block, PuzzlePiecePanel, clean_up_panel,
+        clean_up_panel, close_puzzle_piece_panel, create_pawn_actions_panel, spawn_block,
+        PuzzlePiecePanel,
     },
 };
 use crate::{
     model::game_model::game::{Game, GameCompleted},
-    utilities::{script_plugin::{reset_level, ScriptRes}, database_plugin::{DatabaseConnection, update_score_for_tutorial_level}},
-    view::{GameState, image_handler::ImageMap},
+    utilities::{
+        database_plugin::{update_score_for_tutorial_level, DatabaseConnection},
+        script_plugin::{reset_level, ScriptRes},
+    },
+    view::{image_handler::ImageMap, GameState},
 };
 
 const LEVEL_DISPLAY_BUTTON_SIZE: f32 = 50.0;
 const LEVEL_DISPLAY_BUTTON_MARGIN: f32 = 25.0;
 
-#[derive(Debug,Component)]
+#[derive(Debug, Component)]
 struct GoBackButton;
 
 #[derive(Component)]
@@ -259,7 +265,8 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                         },
                     )
                     .with_text_alignment(TextAlignment::CENTER),));
-                }).insert(GoBackButton);
+                })
+                .insert(GoBackButton);
         })
         .insert(MenuView);
 }
@@ -370,13 +377,18 @@ fn complete_game_button(
     >,
     game: Res<Game>,
     mut db_conn: ResMut<DatabaseConnection>,
-    mut game_state: ResMut<State<GameState>>
+    mut game_state: ResMut<State<GameState>>,
 ) {
     for (interaction, mut color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 *color = BackgroundColor(Color::YELLOW);
-                update_score_for_tutorial_level(db_conn.borrow_mut(), 1, game.level_id, game.solution);
+                update_score_for_tutorial_level(
+                    db_conn.borrow_mut(),
+                    1,
+                    game.level_id,
+                    game.solution,
+                );
                 game_state.set(GameState::LevelSelector).unwrap();
             }
             Interaction::Hovered => {
@@ -389,7 +401,13 @@ fn complete_game_button(
     }
 }
 
-fn no_save_exit(mut interaction_query: Query<(&Interaction, &mut BackgroundColor), (With<Button>, With<GoBackButton>)>, mut game_state: ResMut<State<GameState>>) {
+fn no_save_exit(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor),
+        (With<Button>, With<GoBackButton>),
+    >,
+    mut game_state: ResMut<State<GameState>>,
+) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {

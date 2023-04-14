@@ -34,7 +34,7 @@ pub struct Game {
     pub selected_puzzle_piece: i32,
     pub game_completed: GameCompleted,
     pub solution_steps: i32,
-    pub solution: i32
+    pub solution: i32,
 }
 
 impl Default for Game {
@@ -467,7 +467,7 @@ impl Game {
             selected_puzzle_piece: -1,
             game_completed: GameCompleted::No,
             solution_steps: 0,
-            solution: 0
+            solution: 0,
         }
     }
 }

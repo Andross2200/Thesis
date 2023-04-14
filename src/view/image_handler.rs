@@ -118,7 +118,10 @@ fn load_images(mut commands: Commands, asset_server: Res<AssetServer>) {
     ];
 
     // Fonts
-    let fonts: Vec<Handle<Font>> = vec![asset_server.load("fonts/NotoSans-Regular.ttf"),asset_server.load("fonts/NotoSans-SemiBold.ttf")];
+    let fonts: Vec<Handle<Font>> = vec![
+        asset_server.load("fonts/NotoSans-Regular.ttf"),
+        asset_server.load("fonts/NotoSans-SemiBold.ttf"),
+    ];
 
     commands.insert_resource(ImageMap(image_map, buttons, fonts));
 }

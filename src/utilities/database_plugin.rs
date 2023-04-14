@@ -60,7 +60,7 @@ pub fn get_all_levels_for_player(
     transaction
         .commit()
         .expect("Transaction for getting all levels must be commited");
-    return all_levels;
+    all_levels
 }
 
 pub fn update_score_for_tutorial_level(
