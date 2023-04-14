@@ -41,8 +41,8 @@ jobs:
         run: cargo build
       - name: Check formatting
         run: cargo fmt -- --check
-      # - name: Check Clippy
-      #   run: cargo clippy -- -D clippy::all
+      - name: Check Clippy
+        run: cargo clippy -- -D clippy::all
       - name: Test
         run: cargo test
 
@@ -71,8 +71,8 @@ jobs:
         run: cargo build
       - name: Check formatting
         run: cargo fmt -- --check
-      # - name: Check Clippy
-      #   run: cargo clippy -- -D clippy::all
+      - name: Check Clippy
+        run: cargo clippy -- -D clippy::all
       - name: Test
         run: cargo test
   test_mac:
@@ -100,7 +100,7 @@ jobs:
         run: cargo build
       - name: Check formatting
         run: cargo fmt -- --check
-      # - name: Check Clippy
-      #   run: cargo clippy -- -D clippy::all
+      - name: Check Clippy
+        run: cargo clippy -- -D clippy::all
       - name: Test
         run: cargo test
