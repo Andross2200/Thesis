@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 bevy = "0.9.1"
 mysql = "23.0.1"
+rand = "0.8.5"
 simple-matrix = "0.1.2"
