@@ -2,6 +2,7 @@
 
 use std::borrow::{Borrow, BorrowMut};
 
+use crate::model::game_model::game::GameMode;
 use crate::utilities::database_plugin::{get_all_levels_for_player, AllLevels};
 use crate::{
     model::game_model::game::Game,
@@ -373,7 +374,7 @@ fn level_selector_buttons(
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
-                *game = Game::init_from_fen(level_info.fen.clone(), level_info.id);
+                *game = Game::init_from_fen(level_info.fen.clone(), level_info.id, GameMode::Tutorial);
                 *script_res = ScriptRes::new();
                 game_state.set(GameState::Game).unwrap();
             }

@@ -3,6 +3,12 @@ use bevy::prelude::*;
 use simple_matrix::Matrix;
 use std::{cmp::min, f32::consts::PI};
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum GameMode {
+    Tutorial,
+    Challenge
+}
+
 #[derive(PartialEq, Eq)]
 pub enum GameCompleted {
     Yes,
@@ -35,11 +41,12 @@ pub struct Game {
     pub game_completed: GameCompleted,
     pub solution_steps: i32,
     pub solution: i32,
+    pub game_mode: GameMode
 }
 
 impl Default for Game {
     fn default() -> Self {
-        Game::init_from_fen("5 5 ZZZZZ/Z1C1Z/Z1Z1Z/Z1CPZ/ZZZZZ 2".to_string(), 0)
+        Game::init_from_fen("11 11 ZZZZZZZZZZZ/ZP2C4CZ/ZCZZZZZZZZZ/ZP2C4CZ/ZCZZZZZZZZZ/ZP2C4CZ/ZCZZZZZZZZZ/ZP2C4CZ/ZCZZZZZZZZZ/ZP2C4CZ/ZZZZZZZZZZZ 1".to_string(), 0, GameMode::Tutorial)
     }
 }
 
@@ -54,7 +61,7 @@ impl Game {
 }
 
 impl Game {
-    pub fn init_from_fen(fen: String, id: i32) -> Game {
+    pub fn init_from_fen(fen: String, id: i32, game_mode: GameMode) -> Game {
         let mut iter = fen.split_whitespace();
         let num_of_rows: u32 = iter.next().unwrap().parse().unwrap();
         let num_of_columns: u32 = iter.next().unwrap().parse().unwrap();
@@ -468,6 +475,7 @@ impl Game {
             game_completed: GameCompleted::No,
             solution_steps: 0,
             solution: 0,
+            game_mode: game_mode
         }
     }
 }

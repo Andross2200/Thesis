@@ -1,5 +1,7 @@
 #![allow(clippy::type_complexity)]
 
+use std::borrow::BorrowMut;
+
 use bevy::{
     app::AppExit,
     prelude::{
@@ -13,7 +15,7 @@ use bevy::{
     },
 };
 
-use crate::view::{despawn_screen, image_handler::ImageMap, GameState};
+use crate::{view::{despawn_screen, image_handler::ImageMap, GameState}, utilities::{database_plugin::{DatabaseConnection, get_challenge_fen}, script_plugin::ScriptRes}, model::game_model::game::{Game, GameMode}};
 
 const BUTTON_MARGIN: f32 = 20.0;
 
@@ -313,6 +315,9 @@ fn menu_actions(
     >,
     mut app_exit_events: EventWriter<AppExit>,
     mut game_state: ResMut<State<GameState>>,
+    mut db_conn: ResMut<DatabaseConnection>,
+    mut game: ResMut<Game>,
+    mut script_res: ResMut<ScriptRes>,
 ) {
     for (interaction, button_action, mut back_color) in &mut interaction_query {
         match *interaction {
@@ -322,7 +327,12 @@ fn menu_actions(
                     MenuButtonAction::Tutorial => {
                         game_state.set(GameState::LevelSelector).unwrap();
                     }
-                    MenuButtonAction::Challenge => {}
+                    MenuButtonAction::Challenge => {
+                        let fen = get_challenge_fen(db_conn.borrow_mut());
+                        *game = Game::init_from_fen(fen, 0, GameMode::Challenge);
+                        *script_res = ScriptRes::new();
+                        game_state.set(GameState::Game).unwrap();
+                    }
                     MenuButtonAction::Multiplayer => {}
                     MenuButtonAction::LanguageBack => {}
                     MenuButtonAction::LanguageForward => {}

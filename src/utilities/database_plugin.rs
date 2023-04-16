@@ -1,5 +1,12 @@
 use bevy::prelude::*;
 use mysql::{prelude::Queryable, *};
+use rand::Rng;
+
+#[derive(Debug, PartialEq, Eq, Default)]
+pub struct FenPrefab {
+    pub prefab_id: i32,
+    pub fen: String
+}
 
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct AllLevels {
@@ -116,4 +123,69 @@ pub fn update_score_for_tutorial_level(
     transaction
         .commit()
         .expect("Transaction for getting all levels must be commited");
+}
+
+pub fn get_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> String{
+    let prefabs = db_conn.conn.query_map(
+        "SELECT id, fen FROM challenge_prefabs",
+        |(id, fen_prefab)| {
+            FenPrefab { prefab_id: id, fen: fen_prefab }
+        }
+    ).expect("Query must be successful");
+    let mut rng = rand::thread_rng();
+    let rand_prefab = rng.gen_range(0..prefabs.len());
+    make_fen_from_prefab(prefabs.get(rand_prefab).unwrap().fen.clone())
+}
+
+fn make_fen_from_prefab(prefab: String) -> String {
+    let mut random = rand::thread_rng();
+    let mut pawn_probability = 0.4;
+    let mut perl_probability = 0.5;
+
+    let mut fen: String = String::new();
+    let mut pawns_added: i32 = 0;
+    let mut perl_counter: i32 = 0;
+    let mut prefab_iter = prefab.split_whitespace();
+    fen.push_str(prefab_iter.next().unwrap());
+    fen.push(' ');
+    fen.push_str(prefab_iter.next().unwrap());
+    fen.push(' ');
+    let string = prefab_iter.next().unwrap().chars();
+    let number_of_pawns: i32 = prefab_iter.next().unwrap().parse().unwrap();
+    let mut updated_string = String::new();
+    for char in string {
+        if char == '_' {
+            if random.gen_bool(perl_probability) {
+                updated_string.push('C');
+                perl_probability -= 0.1;
+                perl_counter += 1;
+            } else {
+                updated_string.push('1');
+                perl_probability += 0.1;
+            }
+        } else if char == '+' {
+            if pawns_added < number_of_pawns {
+                if random.gen_bool(pawn_probability) {
+                    if pawns_added == 0 {
+                        updated_string.push('p');
+                    } else {
+                        updated_string.push('P');
+                    }
+                    pawns_added += 1;
+                    pawn_probability -= 0.1;
+                } else {
+                    updated_string.push('1');
+                    pawn_probability += 0.1;
+                }
+            } else {
+                updated_string.push('1');
+            }
+        } else {
+            updated_string.push(char);
+        }
+    }
+    fen.push_str(updated_string.as_str());
+    fen.push(' ');
+    fen.push_str(perl_counter.to_string().as_str());
+    fen
 }

@@ -13,7 +13,7 @@ use super::{
     },
 };
 use crate::{
-    model::game_model::game::{Game, GameCompleted},
+    model::game_model::game::{Game, GameCompleted, GameMode},
     utilities::{
         database_plugin::{update_score_for_tutorial_level, DatabaseConnection},
         script_plugin::{reset_level, ScriptRes},
@@ -383,13 +383,18 @@ fn complete_game_button(
         match *interaction {
             Interaction::Clicked => {
                 *color = BackgroundColor(Color::YELLOW);
-                update_score_for_tutorial_level(
-                    db_conn.borrow_mut(),
-                    1,
-                    game.level_id,
-                    game.solution,
-                );
-                game_state.set(GameState::LevelSelector).unwrap();
+                if game.game_mode == GameMode::Tutorial {
+                    update_score_for_tutorial_level(
+                        db_conn.borrow_mut(),
+                        1,
+                        game.level_id,
+                        game.solution,
+                    );
+                    game_state.set(GameState::LevelSelector).unwrap();
+                }
+                if game.game_mode == GameMode::Challenge {
+                    game_state.set(GameState::MainMenu).unwrap();
+                }
             }
             Interaction::Hovered => {
                 *color = BackgroundColor(Color::AQUAMARINE);
@@ -407,12 +412,18 @@ fn no_save_exit(
         (With<Button>, With<GoBackButton>),
     >,
     mut game_state: ResMut<State<GameState>>,
+    game: Res<Game>
 ) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
-                game_state.set(GameState::LevelSelector).unwrap();
+                if game.game_mode == GameMode::Tutorial {
+                    game_state.set(GameState::LevelSelector).unwrap();
+                }
+                if game.game_mode == GameMode::Challenge {
+                    game_state.set(GameState::MainMenu).unwrap();
+                }
             }
             Interaction::Hovered => {
                 *back_color = BackgroundColor(Color::AQUAMARINE);
