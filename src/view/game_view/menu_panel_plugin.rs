@@ -15,7 +15,7 @@ use super::{
 use crate::{
     model::game_model::game::{Game, GameCompleted, GameMode},
     utilities::{
-        database_plugin::{update_score_for_tutorial_level, DatabaseConnection},
+        database_plugin::{update_score_for_tutorial_level, DatabaseConnection, save_challenge_result},
         script_plugin::{reset_level, ScriptRes},
     },
     view::{image_handler::ImageMap, GameState},
@@ -362,7 +362,7 @@ fn cond_complete_game_button(game: Res<Game>) -> ShouldRun {
     if game.game_completed == GameCompleted::Yes {
         ShouldRun::Yes
     } else {
-        ShouldRun::No
+        ShouldRun::Yes
     }
 }
 
@@ -393,6 +393,7 @@ fn complete_game_button(
                     game_state.set(GameState::LevelSelector).unwrap();
                 }
                 if game.game_mode == GameMode::Challenge {
+                    save_challenge_result(&mut db_conn, 1, game.fen.clone(), game.solution);
                     game_state.set(GameState::MainMenu).unwrap();
                 }
             }

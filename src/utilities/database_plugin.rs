@@ -189,3 +189,23 @@ fn make_fen_from_prefab(prefab: String) -> String {
     fen.push_str(perl_counter.to_string().as_str());
     fen
 }
+
+pub fn save_challenge_result(db_conn: &mut ResMut<DatabaseConnection>, player_id: i32, fen: String, num_of_steps: i32) {
+    let insert_query = format!(
+        r"INSERT INTO challenge_solutions (fen, num_of_steps, player_id)
+        VALUES ('{fen}', {num_of_steps}, {player_id});"
+    );
+
+    let mut transaction = db_conn
+        .conn
+        .start_transaction(TxOpts::default())
+        .expect("New transaction must be started");
+
+    transaction
+    .query_drop(insert_query)
+    .expect("Query must be successful");
+
+    transaction
+        .commit()
+        .expect("Transaction for getting all levels must be commited");
+}
