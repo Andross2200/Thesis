@@ -5,7 +5,7 @@ use rand::Rng;
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct FenPrefab {
     pub prefab_id: i32,
-    pub fen: String
+    pub fen: String,
 }
 
 #[derive(Debug, PartialEq, Eq, Default)]
@@ -125,13 +125,17 @@ pub fn update_score_for_tutorial_level(
         .expect("Transaction for getting all levels must be commited");
 }
 
-pub fn get_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> String{
-    let prefabs = db_conn.conn.query_map(
-        "SELECT id, fen FROM challenge_prefabs",
-        |(id, fen_prefab)| {
-            FenPrefab { prefab_id: id, fen: fen_prefab }
-        }
-    ).expect("Query must be successful");
+pub fn get_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> String {
+    let prefabs = db_conn
+        .conn
+        .query_map(
+            "SELECT id, fen FROM challenge_prefabs",
+            |(id, fen_prefab)| FenPrefab {
+                prefab_id: id,
+                fen: fen_prefab,
+            },
+        )
+        .expect("Query must be successful");
     let mut rng = rand::thread_rng();
     let rand_prefab = rng.gen_range(0..prefabs.len());
     make_fen_from_prefab(prefabs.get(rand_prefab).unwrap().fen.clone())
@@ -190,7 +194,12 @@ fn make_fen_from_prefab(prefab: String) -> String {
     fen
 }
 
-pub fn save_challenge_result(db_conn: &mut ResMut<DatabaseConnection>, player_id: i32, fen: String, num_of_steps: i32) {
+pub fn save_challenge_result(
+    db_conn: &mut ResMut<DatabaseConnection>,
+    player_id: i32,
+    fen: String,
+    num_of_steps: i32,
+) {
     let insert_query = format!(
         r"INSERT INTO challenge_solutions (fen, num_of_steps, player_id)
         VALUES ('{fen}', {num_of_steps}, {player_id});"
@@ -202,8 +211,8 @@ pub fn save_challenge_result(db_conn: &mut ResMut<DatabaseConnection>, player_id
         .expect("New transaction must be started");
 
     transaction
-    .query_drop(insert_query)
-    .expect("Query must be successful");
+        .query_drop(insert_query)
+        .expect("Query must be successful");
 
     transaction
         .commit()

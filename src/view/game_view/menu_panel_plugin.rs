@@ -15,7 +15,9 @@ use super::{
 use crate::{
     model::game_model::game::{Game, GameCompleted, GameMode},
     utilities::{
-        database_plugin::{update_score_for_tutorial_level, DatabaseConnection, save_challenge_result},
+        database_plugin::{
+            save_challenge_result, update_score_for_tutorial_level, DatabaseConnection,
+        },
         script_plugin::{reset_level, ScriptRes},
     },
     view::{image_handler::ImageMap, GameState},
@@ -362,7 +364,7 @@ fn cond_complete_game_button(game: Res<Game>) -> ShouldRun {
     if game.game_completed == GameCompleted::Yes {
         ShouldRun::Yes
     } else {
-        ShouldRun::Yes
+        ShouldRun::No
     }
 }
 
@@ -413,7 +415,7 @@ fn no_save_exit(
         (With<Button>, With<GoBackButton>),
     >,
     mut game_state: ResMut<State<GameState>>,
-    game: Res<Game>
+    game: Res<Game>,
 ) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {

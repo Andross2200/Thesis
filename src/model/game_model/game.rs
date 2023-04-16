@@ -6,7 +6,7 @@ use std::{cmp::min, f32::consts::PI};
 #[derive(Debug, PartialEq, Eq)]
 pub enum GameMode {
     Tutorial,
-    Challenge
+    Challenge,
 }
 
 #[derive(PartialEq, Eq)]
@@ -41,7 +41,7 @@ pub struct Game {
     pub game_completed: GameCompleted,
     pub solution_steps: i32,
     pub solution: i32,
-    pub game_mode: GameMode
+    pub game_mode: GameMode,
 }
 
 impl Default for Game {
@@ -475,7 +475,7 @@ impl Game {
             game_completed: GameCompleted::No,
             solution_steps: 0,
             solution: 0,
-            game_mode: game_mode
+            game_mode,
         }
     }
 }

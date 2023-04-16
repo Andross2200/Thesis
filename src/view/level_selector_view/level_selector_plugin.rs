@@ -374,7 +374,8 @@ fn level_selector_buttons(
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
-                *game = Game::init_from_fen(level_info.fen.clone(), level_info.id, GameMode::Tutorial);
+                *game =
+                    Game::init_from_fen(level_info.fen.clone(), level_info.id, GameMode::Tutorial);
                 *script_res = ScriptRes::new();
                 game_state.set(GameState::Game).unwrap();
             }

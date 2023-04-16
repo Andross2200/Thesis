@@ -15,7 +15,14 @@ use bevy::{
     },
 };
 
-use crate::{view::{despawn_screen, image_handler::ImageMap, GameState}, utilities::{database_plugin::{DatabaseConnection, get_challenge_fen}, script_plugin::ScriptRes}, model::game_model::game::{Game, GameMode}};
+use crate::{
+    model::game_model::game::{Game, GameMode},
+    utilities::{
+        database_plugin::{get_challenge_fen, DatabaseConnection},
+        script_plugin::ScriptRes,
+    },
+    view::{despawn_screen, image_handler::ImageMap, GameState},
+};
 
 const BUTTON_MARGIN: f32 = 20.0;
 
