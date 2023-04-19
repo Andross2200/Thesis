@@ -16,7 +16,8 @@ use crate::{
     model::game_model::game::{Game, GameCompleted, GameMode},
     utilities::{
         database_plugin::{
-            save_challenge_result, update_score_for_tutorial_level, DatabaseConnection,
+            save_challenge_result, update_score_for_tutorial_level, ConfigResource,
+            DatabaseConnection,
         },
         script_plugin::{reset_level, ScriptRes},
     },
@@ -380,6 +381,7 @@ fn complete_game_button(
     game: Res<Game>,
     mut db_conn: ResMut<DatabaseConnection>,
     mut game_state: ResMut<State<GameState>>,
+    config: Res<ConfigResource>,
 ) {
     for (interaction, mut color) in &mut interaction_query {
         match *interaction {
@@ -388,14 +390,27 @@ fn complete_game_button(
                 if game.game_mode == GameMode::Tutorial {
                     update_score_for_tutorial_level(
                         db_conn.borrow_mut(),
-                        1,
+                        config
+                            .local_players
+                            .get(config.selected_player_id as usize)
+                            .unwrap()
+                            .id,
                         game.level_id,
                         game.solution,
                     );
                     game_state.set(GameState::LevelSelector).unwrap();
                 }
                 if game.game_mode == GameMode::Challenge {
-                    save_challenge_result(&mut db_conn, 1, game.fen.clone(), game.solution);
+                    save_challenge_result(
+                        &mut db_conn,
+                        config
+                            .local_players
+                            .get(config.selected_player_id as usize)
+                            .unwrap()
+                            .id,
+                        game.fen.clone(),
+                        game.solution,
+                    );
                     game_state.set(GameState::MainMenu).unwrap();
                 }
             }

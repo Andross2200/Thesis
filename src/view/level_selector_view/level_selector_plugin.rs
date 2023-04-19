@@ -3,13 +3,15 @@
 use std::borrow::{Borrow, BorrowMut};
 
 use crate::model::game_model::game::GameMode;
-use crate::utilities::database_plugin::{get_all_levels_for_player, AllLevels};
+use crate::utilities::database_plugin::{
+    get_all_levels_for_player, AllLevelsWithSolutions, ConfigResource,
+};
 use crate::{
     model::game_model::game::Game,
     utilities::{database_plugin::DatabaseConnection, script_plugin::ScriptRes},
     view::{despawn_screen, image_handler::ImageMap, GameState},
 };
-use bevy::prelude::State;
+use bevy::prelude::{DespawnRecursiveExt, State};
 use bevy::{
     prelude::{
         info, BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component, Entity,
@@ -47,7 +49,7 @@ struct LevelSelectorData {
     pub panels_in_row: f32,
     pub init_left_shift: f32,
     pub space_between_rows: f32,
-    pub all_levels: Vec<AllLevels>,
+    pub all_levels: Vec<AllLevelsWithSolutions>,
     pub panels: Vec<Entity>,
 }
 
@@ -76,6 +78,7 @@ fn init_view(
     windows: Res<Windows>,
     mut level_selector_data: ResMut<LevelSelectorData>,
     db_conn: ResMut<DatabaseConnection>,
+    config: Res<ConfigResource>,
 ) {
     let window = windows.get_primary().unwrap();
     info!(
@@ -94,7 +97,14 @@ fn init_view(
     level_selector_data.panels_in_row = num_of_panels_in_row;
     level_selector_data.init_left_shift = init_left_shift;
     level_selector_data.space_between_rows = space_between_rows;
-    level_selector_data.all_levels = get_all_levels_for_player(db_conn, 1);
+    level_selector_data.all_levels = get_all_levels_for_player(
+        db_conn,
+        config
+            .local_players
+            .get(config.selected_player_id as usize)
+            .unwrap()
+            .id,
+    );
     info!("{:?}", level_selector_data.all_levels.len());
 
     commands
@@ -198,12 +208,15 @@ fn create_levele_panels(
     image_handler: &Res<ImageMap>,
 ) {
     if !level_selector_data.panels.is_empty() {
+        for entity in 0..level_selector_data.panels.len() {
+            commands
+                .entity(*level_selector_data.panels.get(entity).unwrap())
+                .despawn_recursive();
+        }
         level_selector_data.panels.clear();
     }
-
     let mut item_counter = level_selector_data.start_index;
     let mut row_counter = 0;
-    let mut last_completed = level_selector_data.start_index - 1;
     while item_counter < level_selector_data.all_levels.len() as i32
         && item_counter
             < level_selector_data.start_index + (level_selector_data.panels_in_row * 2.0) as i32
@@ -334,13 +347,23 @@ fn create_levele_panels(
                     ));
                 })
                 .id();
-            if level_info.number_of_steps.is_some() {
-                commands.entity(select_button).insert(SelectLevelButton {
-                    id: level_info.level_id,
-                    fen: level_info.fen.clone(),
-                });
-                last_completed += 1;
-            } else if level_info.number_of_steps.is_none() && item_counter == (last_completed + 1) {
+            let prev_index_exists_and_solved = if item_counter == 0 {
+                true
+            } else {
+                level_selector_data
+                    .all_levels
+                    .get(item_counter as usize - 1)
+                    .is_some()
+                    && level_selector_data
+                        .all_levels
+                        .get(item_counter as usize - 1)
+                        .unwrap()
+                        .number_of_steps
+                        .is_some()
+            };
+            if level_info.number_of_steps.is_some()
+                || level_info.number_of_steps.is_none() && prev_index_exists_and_solved
+            {
                 commands.entity(select_button).insert(SelectLevelButton {
                     id: level_info.level_id,
                     fen: level_info.fen.clone(),
@@ -445,12 +468,14 @@ fn back_to_main_menu(
         (Changed<Interaction>, With<Button>, With<GoBackButton>),
     >,
     mut game_state: ResMut<State<GameState>>,
+    mut level_selector_data: ResMut<LevelSelectorData>,
 ) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
                 game_state.set(GameState::MainMenu).unwrap();
+                level_selector_data.panels.clear();
             }
             Interaction::Hovered => {
                 *back_color = BackgroundColor(Color::AQUAMARINE);

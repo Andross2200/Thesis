@@ -1,4 +1,5 @@
 #![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 
 use std::borrow::BorrowMut;
 
@@ -8,7 +9,7 @@ use bevy::{
         BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component, EventWriter,
         NodeBundle, Plugin, Query, Res, ResMut, State, SystemSet, TextBundle, With,
     },
-    text::TextStyle,
+    text::{Text, TextStyle},
     ui::{
         AlignItems, BackgroundColor, FlexDirection, Interaction, JustifyContent, PositionType,
         Size, Style, UiRect, Val,
@@ -18,13 +19,18 @@ use bevy::{
 use crate::{
     model::game_model::game::{Game, GameMode},
     utilities::{
-        database_plugin::{get_challenge_fen, DatabaseConnection},
+        database_plugin::{
+            create_new_player, get_challenge_fen, ConfigResource, DatabaseConnection,
+        },
         script_plugin::ScriptRes,
     },
     view::{despawn_screen, image_handler::ImageMap, GameState},
 };
 
 const BUTTON_MARGIN: f32 = 20.0;
+
+#[derive(Debug, Component)]
+struct PlayerDisplayText;
 
 #[derive(Debug, Component)]
 enum MenuButtonAction {
@@ -35,6 +41,7 @@ enum MenuButtonAction {
     LanguageForward,
     PlayerBack,
     PlayerForward,
+    CreatePlayer,
     Quit,
 }
 
@@ -53,7 +60,7 @@ impl Plugin for MainMenuPlugin {
     }
 }
 
-fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>) {
+fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<ConfigResource>) {
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -208,7 +215,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>) {
                     .insert(MenuButtonAction::LanguageBack);
                     node.spawn(
                         TextBundle::from_section(
-                            "Language: English",
+                            format!("Language: {}", config.language),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 30.0,
@@ -261,7 +268,14 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>) {
                     .insert(MenuButtonAction::PlayerBack);
                     node.spawn(
                         TextBundle::from_section(
-                            "Player: Bobby436",
+                            format!(
+                                "Player: {}",
+                                config
+                                    .local_players
+                                    .get(config.selected_player_id as usize)
+                                    .unwrap()
+                                    .name
+                            ),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 30.0,
@@ -272,7 +286,8 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>) {
                             margin: UiRect::all(Val::Px(5.0)),
                             ..Default::default()
                         }),
-                    );
+                    )
+                    .insert(PlayerDisplayText);
                     node.spawn(ButtonBundle {
                         style: Style {
                             size: Size::new(Val::Px(50.0), Val::Px(50.0)),
@@ -284,6 +299,34 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>) {
                     })
                     .insert(MenuButtonAction::PlayerForward);
                 });
+
+            // Create new player button
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size {
+                            width: Val::Px(200.0),
+                            height: Val::Px(50.0),
+                        },
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
+                        justify_content: JustifyContent::Center,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                })
+                .with_children(|button| {
+                    button.spawn(TextBundle::from_section(
+                        "Create New Player",
+                        TextStyle {
+                            font: image_handler.2.get(0).unwrap().clone(),
+                            font_size: 30.0,
+                            color: Color::BLACK,
+                        },
+                    ));
+                })
+                .insert(MenuButtonAction::CreatePlayer);
 
             // Exit game button
             parent
@@ -320,11 +363,13 @@ fn menu_actions(
         (&Interaction, &MenuButtonAction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
     >,
+    mut player_display_text: Query<&mut Text, With<PlayerDisplayText>>,
     mut app_exit_events: EventWriter<AppExit>,
     mut game_state: ResMut<State<GameState>>,
     mut db_conn: ResMut<DatabaseConnection>,
     mut game: ResMut<Game>,
     mut script_res: ResMut<ScriptRes>,
+    mut config: ResMut<ConfigResource>,
 ) {
     for (interaction, button_action, mut back_color) in &mut interaction_query {
         match *interaction {
@@ -343,10 +388,49 @@ fn menu_actions(
                     MenuButtonAction::Multiplayer => {}
                     MenuButtonAction::LanguageBack => {}
                     MenuButtonAction::LanguageForward => {}
-                    MenuButtonAction::PlayerBack => {}
-                    MenuButtonAction::PlayerForward => {}
+                    MenuButtonAction::PlayerBack => {
+                        for mut text in &mut player_display_text {
+                            config.selected_player_id =
+                                (config.selected_player_id - 1) % config.local_players.len() as i32;
+                            text.sections[0].value = format!(
+                                "Player: {}",
+                                config
+                                    .local_players
+                                    .get(config.selected_player_id as usize)
+                                    .unwrap()
+                                    .name
+                            );
+                        }
+                    }
+                    MenuButtonAction::PlayerForward => {
+                        for mut text in &mut player_display_text {
+                            config.selected_player_id =
+                                (config.selected_player_id + 1) % config.local_players.len() as i32;
+                            text.sections[0].value = format!(
+                                "Player: {}",
+                                config
+                                    .local_players
+                                    .get(config.selected_player_id as usize)
+                                    .unwrap()
+                                    .name
+                            );
+                        }
+                    }
                     MenuButtonAction::Quit => {
                         app_exit_events.send(AppExit);
+                    }
+                    MenuButtonAction::CreatePlayer => {
+                        create_new_player(db_conn.borrow_mut(), config.borrow_mut());
+                        for mut text in &mut player_display_text {
+                            text.sections[0].value = format!(
+                                "Player: {}",
+                                config
+                                    .local_players
+                                    .get(config.selected_player_id as usize)
+                                    .unwrap()
+                                    .name
+                            );
+                        }
                     }
                 }
             }
