@@ -1,6 +1,24 @@
+use std::{borrow::BorrowMut, fs};
+
 use bevy::prelude::*;
 use mysql::{prelude::Queryable, *};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
+
+const FILE_PATH: &str = "./config.json";
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Player {
+    pub id: i32,
+    pub name: String,
+}
+
+#[derive(Debug, Resource, Default, Serialize, Deserialize)]
+pub struct ConfigResource {
+    pub language: String,
+    pub selected_player_id: i32,
+    pub local_players: Vec<Player>,
+}
 
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct FenPrefab {
@@ -9,7 +27,7 @@ pub struct FenPrefab {
 }
 
 #[derive(Debug, PartialEq, Eq, Default)]
-pub struct AllLevels {
+pub struct AllLevelsWithSolutions {
     pub level_id: i32,
     pub level_description: String,
     pub fen: String,
@@ -26,7 +44,8 @@ pub struct DatabasePlugin;
 
 impl Plugin for DatabasePlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(connect_to_db);
+        app.add_startup_system(connect_to_db)
+            .add_startup_system(init_player);
     }
 }
 
@@ -41,11 +60,20 @@ fn connect_to_db(mut commands: Commands) {
 pub fn get_all_levels_for_player(
     mut db_conn: ResMut<DatabaseConnection>,
     player_id: i32,
-) -> Vec<AllLevels> {
-    let query = format!(
+) -> Vec<AllLevelsWithSolutions> {
+    let solved_levels_query = format!(
         r"SELECT tl.id, tl.descrip, tl.fen, tls.number_of_steps FROM tutorial_levels tl
+        RIGHT JOIN tutorial_level_solutions tls ON tl.id = tls.level_id
+        WHERE tls.player_id = {player_id}
+        ORDER BY tl.id;"
+    );
+
+    let unsolved_levels_query = format!(
+        r"SELECT DISTINCT tl.id, tl.descrip, tl.fen FROM tutorial_levels tl
         LEFT JOIN tutorial_level_solutions tls ON tl.id = tls.level_id
-        WHERE tls.player_id = {player_id} OR tls.player_id IS NULL
+        WHERE tl.id NOT IN (SELECT tl.id FROM tutorial_levels tl
+        RIGHT JOIN tutorial_level_solutions tls ON tl.id = tls.level_id
+        WHERE tls.player_id = {player_id})
         ORDER BY tl.id;"
     );
 
@@ -53,10 +81,10 @@ pub fn get_all_levels_for_player(
         .conn
         .start_transaction(TxOpts::default())
         .expect("New transaction must be started");
-    let all_levels = transaction
+    let mut all_levels = transaction
         .query_map(
-            query,
-            |(level_id, level_description, fen, number_of_steps)| AllLevels {
+            solved_levels_query,
+            |(level_id, level_description, fen, number_of_steps)| AllLevelsWithSolutions {
                 level_id,
                 level_description,
                 fen,
@@ -64,6 +92,18 @@ pub fn get_all_levels_for_player(
             },
         )
         .expect("List of all levels and solutions for given player must be returned");
+    let mut unsolved_levels = transaction
+        .query_map(
+            unsolved_levels_query,
+            |(level_id, level_description, fen)| AllLevelsWithSolutions {
+                level_id,
+                level_description,
+                fen,
+                number_of_steps: None,
+            },
+        )
+        .expect("List of all levels and solutions for given player must be returned");
+    all_levels.append(&mut unsolved_levels);
     transaction
         .commit()
         .expect("Transaction for getting all levels must be commited");
@@ -217,4 +257,74 @@ pub fn save_challenge_result(
     transaction
         .commit()
         .expect("Transaction for getting all levels must be commited");
+}
+
+fn init_player(mut commands: Commands) {
+    let config_string = fs::read_to_string(FILE_PATH).expect("Should be able to read from file");
+    let config: ConfigResource = serde_json::from_str(&config_string).unwrap();
+    commands.insert_resource(config);
+}
+
+pub fn create_new_player(
+    db_conn: &mut ResMut<DatabaseConnection>,
+    config: &mut ResMut<ConfigResource>,
+) {
+    let all_players_query = "SELECT player_name FROM players;".to_string();
+    let mut transaction = db_conn
+        .conn
+        .start_transaction(TxOpts::default())
+        .expect("New transaction must be started");
+
+    let all_players: Vec<String> = transaction
+        .query(all_players_query)
+        .expect("The query should be successful");
+
+    let mut rng = rand::thread_rng();
+    let mut player = format!(
+        "Unknown{}{}{}{}",
+        rng.gen_range(0..9),
+        rng.gen_range(0..9),
+        rng.gen_range(0..9),
+        rng.gen_range(0..9)
+    );
+    while all_players.contains(&player) {
+        player = format!(
+            "Unknown{}{}{}{}",
+            rng.gen_range(0..9),
+            rng.gen_range(0..9),
+            rng.gen_range(0..9),
+            rng.gen_range(0..9)
+        );
+    }
+    transaction
+        .query_drop(format!(
+            r"INSERT INTO players (player_name)
+        VALUES ('{player}');"
+        ))
+        .expect("This query should be successful");
+    let new_player: Option<i32> = transaction
+        .query_first(format!(
+            r"SELECT id FROM players
+        WHERE player_name = '{player}';"
+        ))
+        .expect("This query should be successful");
+    let player_struct: Player = if let Some(player_id) = new_player {
+        Player {
+            id: player_id,
+            name: player,
+        }
+    } else {
+        panic!("Player id not received")
+    };
+    transaction
+        .commit()
+        .expect("The transaction should be committed");
+    config.local_players.push(player_struct);
+    config.selected_player_id = config.local_players.len() as i32 - 1;
+    update_cofig_file(config.borrow_mut());
+}
+
+fn update_cofig_file(config: &mut ConfigResource) {
+    let json_config = serde_json::to_string(&config).expect("Config should be serializable");
+    fs::write(FILE_PATH, json_config).expect("File should be rewritten");
 }
