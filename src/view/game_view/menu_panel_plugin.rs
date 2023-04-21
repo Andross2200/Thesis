@@ -19,7 +19,7 @@ use crate::{
             save_challenge_result, update_score_for_tutorial_level, ConfigResource,
             DatabaseConnection,
         },
-        script_plugin::{reset_level, ScriptRes},
+        script_plugin::{reset_level, ScriptRes}, language_plugin::LanguageResource,
     },
     view::{image_handler::ImageMap, GameState},
 };
@@ -76,7 +76,7 @@ impl Plugin for MenuViewPlugin {
     }
 }
 
-fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
+fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, language: Res<LanguageResource>) {
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -100,7 +100,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
         })
         .with_children(|parent| {
             parent.spawn((TextBundle::from_section(
-                "Blocks",
+                language.game.blocks_button_panel.clone(),
                 TextStyle {
                     font: image_map.2.get(0).unwrap().clone(),
                     font_size: 50.0,
@@ -123,9 +123,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                     ..default()
                 })
                 .with_children(|block_node| {
-                    let block_types: [&str; 4] =
-                        ["Pawn Actions", "Flow Control", "Numbers", "Logic"];
-                    for str in block_types {
+                    for str in language.game.blocks_panels_selector_buttons.clone() {
                         block_node
                             .spawn(ButtonBundle {
                                 style: Style {
@@ -146,7 +144,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                             .with_children(|button| {
                                 button.spawn(
                                     (TextBundle::from_section(
-                                        str,
+                                        str.clone(),
                                         TextStyle {
                                             font: image_map.2.get(0).unwrap().clone(),
                                             font_size: 20.0,
@@ -161,7 +159,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                     }
                 });
             parent.spawn((TextBundle::from_section(
-                "Move block",
+                language.game.move_arrows_panel_label.clone(),
                 TextStyle {
                     font: image_map.2.get(0).unwrap().clone(),
                     font_size: 28.0,
@@ -214,7 +212,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                         .insert(PuzzleMovementButtons::Down);
                 });
             parent.spawn((TextBundle::from_section(
-                "Menu",
+                language.game.menu_panel_label.clone(),
                 TextStyle {
                     font: image_map.2.get(0).unwrap().clone(),
                     font_size: 40.0,
@@ -236,7 +234,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                 })
                 .with_children(|parent| {
                     parent.spawn((TextBundle::from_section(
-                        "Complete",
+                        language.game.complete_button.clone(),
                         TextStyle {
                             font: image_map.2.get(0).unwrap().clone(),
                             font_size: 30.0,
@@ -260,7 +258,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                 })
                 .with_children(|parent| {
                     parent.spawn((TextBundle::from_section(
-                        "Back to Menu",
+                        language.game.go_back_button.clone(),
                         TextStyle {
                             font: image_map.2.get(0).unwrap().clone(),
                             font_size: 20.0,
@@ -285,7 +283,7 @@ fn puzzle_type_buttons(
             With<PuzzlePieceTypeButton>,
         ),
     >,
-    mut panel: Query<Entity, With<PuzzlePiecePanel>>,
+    mut panel: Query<Entity, With<PuzzlePiecePanel>>
 ) {
     for (interaction, button_name, mut color) in &mut interaction_query {
         match *interaction {
