@@ -22,7 +22,7 @@ use crate::{
         database_plugin::{
             create_new_player, get_challenge_fen, ConfigResource, DatabaseConnection,
         },
-        script_plugin::ScriptRes,
+        script_plugin::ScriptRes, language_plugin::LanguageResource,
     },
     view::{despawn_screen, image_handler::ImageMap, GameState},
 };
@@ -60,7 +60,7 @@ impl Plugin for MainMenuPlugin {
     }
 }
 
-fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<ConfigResource>) {
+fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<ConfigResource>, language: Res<LanguageResource>) {
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -120,7 +120,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                 })
                 .with_children(|button| {
                     button.spawn(TextBundle::from_section(
-                        "Tutorial",
+                        language.main_menu.tutorial_button.clone(),
                         TextStyle {
                             font: image_handler.2.get(0).unwrap().clone(),
                             font_size: 50.0,
@@ -148,7 +148,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                 })
                 .with_children(|button| {
                     button.spawn(TextBundle::from_section(
-                        "Challenge",
+                        language.main_menu.challenge_button.clone(),
                         TextStyle {
                             font: image_handler.2.get(0).unwrap().clone(),
                             font_size: 50.0,
@@ -176,7 +176,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                 })
                 .with_children(|button| {
                     button.spawn(TextBundle::from_section(
-                        "Multiplayer",
+                        language.main_menu.multiplayer_button.clone(),
                         TextStyle {
                             font: image_handler.2.get(0).unwrap().clone(),
                             font_size: 50.0,
@@ -215,7 +215,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                     .insert(MenuButtonAction::LanguageBack);
                     node.spawn(
                         TextBundle::from_section(
-                            format!("Language: {}", config.language),
+                            format!("{} {}", language.main_menu.language_panel.clone(), config.language),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 30.0,
@@ -269,7 +269,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                     node.spawn(
                         TextBundle::from_section(
                             format!(
-                                "Player: {}",
+                                "{} {}", language.main_menu.player_panel.clone(),
                                 config
                                     .local_players
                                     .get(config.selected_player_id as usize)
@@ -318,7 +318,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                 })
                 .with_children(|button| {
                     button.spawn(TextBundle::from_section(
-                        "Create New Player",
+                        language.main_menu.create_new_player_button.clone(),
                         TextStyle {
                             font: image_handler.2.get(0).unwrap().clone(),
                             font_size: 30.0,
@@ -346,7 +346,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                 })
                 .with_children(|button| {
                     button.spawn(TextBundle::from_section(
-                        "Exit to Desktop",
+                        language.main_menu.exit_button.clone(),
                         TextStyle {
                             font: image_handler.2.get(0).unwrap().clone(),
                             font_size: 35.0,
