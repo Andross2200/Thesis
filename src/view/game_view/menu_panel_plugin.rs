@@ -26,6 +26,7 @@ use crate::{
 
 const LEVEL_DISPLAY_BUTTON_SIZE: f32 = 50.0;
 const LEVEL_DISPLAY_BUTTON_MARGIN: f32 = 25.0;
+const BUTTON_NAMES: [&str; 4] = ["Pawn Actions", "Flow Control", "Numbers", "Logic"];
 
 #[derive(Debug, Component)]
 struct GoBackButton;
@@ -123,6 +124,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, language: Res<
                     ..default()
                 })
                 .with_children(|block_node| {
+                    let mut i: usize = 0;
                     for str in language.game.blocks_panels_selector_buttons.clone() {
                         block_node
                             .spawn(ButtonBundle {
@@ -154,8 +156,9 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, language: Res<
                                     .with_text_alignment(TextAlignment::CENTER),
                                 );
                             })
-                            .insert(Name::new(str))
+                            .insert(Name::new(BUTTON_NAMES[i]))
                             .insert(PuzzlePieceTypeButton);
+                        i += 1;
                     }
                 });
             parent.spawn((TextBundle::from_section(

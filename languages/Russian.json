@@ -1,0 +1,48 @@
+{
+    "main_menu": {
+      "tutorial_button": "Обучение",
+      "challenge_button": "Вызов",
+      "multiplayer_button": "Мультиплеер",
+      "language_panel": "Язык:",
+      "player_panel": "Игрок:",
+      "create_new_player_button": "Новый игрок",
+      "exit_button": "На рабочий стол"
+    },
+    "level_selector": {
+      "go_back_button": "Назад",
+      "level_label": "Уровень ",
+      "not_completed_label": "Не пройден",
+      "completed_label": ["Пройден в ", " ходов"],
+      "selected_button": "Начать"
+    },
+    "game": {
+      "blocks_button_panel": "Блоки",
+      "blocks_panels_selector_buttons": [
+        "Движение",
+        "Контроль",
+        "Числа",
+        "Логика"
+      ],
+      "pawn_action_panel": {
+        "label": "Движение",
+        "buttons": [
+          "Переместить Зеленого Вверх",
+          "Переместить Зеленого Направо",
+          "Переместить Зеленого Вниз",
+          "Переместить Зеленого Налево",
+          "Переместить Оранжевого Вверх",
+          "Переместить Оранжевого Напрвао",
+          "Переместить Оранжевого Вниз",
+          "Переместить Оранжевого Налево",
+          "Собрать Жемчуг Зеленым",
+          "Собрать Жемчуг Оранжевым"
+        ],
+        "close_button": "Закрыть"
+      },
+      "move_arrows_panel_label": "Двигать блок",
+      "menu_panel_label": "Меню",
+      "complete_button": "Завершить",
+      "go_back_button": "Назад",
+      "perls_score_label": "Жемчуг"
+    }
+  }

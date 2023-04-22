@@ -13,11 +13,19 @@ pub struct Player {
     pub name: String,
 }
 
-#[derive(Debug, Resource, Default, Serialize, Deserialize)]
+#[derive(Debug, Resource, Serialize, Deserialize)]
 pub struct ConfigResource {
     pub language: String,
     pub selected_player_id: i32,
     pub local_players: Vec<Player>,
+}
+
+impl Default for ConfigResource {
+    fn default() -> Self {
+        let config_string = fs::read_to_string(FILE_PATH).expect("Should be able to read from file");
+        let new_config: ConfigResource = serde_json::from_str(&config_string).unwrap();
+        new_config
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Default)]
@@ -45,8 +53,7 @@ pub struct DatabasePlugin;
 impl Plugin for DatabasePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(connect_to_db)
-        .init_resource::<ConfigResource>()
-        .add_startup_system(init_player);
+        .init_resource::<ConfigResource>();
     }
 }
 
@@ -258,12 +265,6 @@ pub fn save_challenge_result(
     transaction
         .commit()
         .expect("Transaction for getting all levels must be commited");
-}
-
-fn init_player(mut config: ResMut<ConfigResource>) {
-    let config_string = fs::read_to_string(FILE_PATH).expect("Should be able to read from file");
-    let new_config: ConfigResource = serde_json::from_str(&config_string).unwrap();
-    *config = new_config;
 }
 
 pub fn create_new_player(
