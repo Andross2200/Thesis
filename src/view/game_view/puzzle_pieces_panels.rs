@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    model::game_model::game::Game, utilities::script_plugin::ScriptRes,
+    model::game_model::game::Game, utilities::{script_plugin::ScriptRes, language_plugin::PuzzleButtonPanel},
     view::image_handler::ImageMap,
 };
 
@@ -24,7 +24,7 @@ pub struct ClosePuzzlePiecePanelButton;
 #[derive(Component)]
 pub struct PuzzlePiecePanel;
 
-pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageMap) {
+pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageMap, language: &PuzzleButtonPanel) {
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -49,7 +49,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
         .with_children(|parent| {
             parent.spawn(
                 TextBundle::from_section(
-                    "Pawn Movement",
+                    language.label.clone(),
                     TextStyle {
                         font: image_handler.2.get(0).unwrap().clone(),
                         font_size: 25.0,
@@ -66,6 +66,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                     ..Default::default()
                 }),
             );
+            let mut i: usize = 0;
             for color in PAWNS {
                 for direction in DIRECTIONS {
                     parent
@@ -89,7 +90,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                         .with_children(|button| {
                             button.spawn(
                                 (TextBundle::from_section(
-                                    format!("move {color} {direction}"),
+                                    language.buttons[i].clone(),
                                     TextStyle {
                                         font: image_handler.2.get(0).unwrap().clone(),
                                         font_size: 20.0,
@@ -101,6 +102,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                         })
                         .insert(Name::new(format!("move {color} {direction}")))
                         .insert(PuzzlePieceButton);
+                    i += 1;
                 }
             }
             for color in PAWNS {
@@ -125,7 +127,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                     .with_children(|button| {
                         button.spawn(
                             (TextBundle::from_section(
-                                format!("{color} collects perl"),
+                                language.buttons[i].clone(),
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 20.0,
@@ -167,7 +169,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                 .with_children(|button| {
                     button.spawn(
                         TextBundle::from_section(
-                            "Close",
+                            language.close_button.clone(),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 20.0,

@@ -283,7 +283,8 @@ fn puzzle_type_buttons(
             With<PuzzlePieceTypeButton>,
         ),
     >,
-    mut panel: Query<Entity, With<PuzzlePiecePanel>>
+    mut panel: Query<Entity, With<PuzzlePiecePanel>>,
+    language: Res<LanguageResource>
 ) {
     for (interaction, button_name, mut color) in &mut interaction_query {
         match *interaction {
@@ -292,7 +293,7 @@ fn puzzle_type_buttons(
                     for p in &mut panel {
                         commands.entity(p).despawn();
                     }
-                    create_pawn_actions_panel(&mut commands, &image_handler);
+                    create_pawn_actions_panel(&mut commands, &image_handler, &language.game.pawn_action_panel);
                 }
                 *color = BackgroundColor(Color::YELLOW);
             }
