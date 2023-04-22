@@ -1,9 +1,1 @@
-{
-  "language": "Russian",
-  "selected_player_id": 2,
-  "local_players": [
-    { "id": 1, "name": "Bobcat95" },
-    { "id": 3, "name": "Panda12" },
-    { "id": 9, "name": "Unknown4045" }
-  ]
-}
+{"languages":["English","Russian"],"selected_language":1,"selected_player_id":2,"local_players":[{"id":1,"name":"Bobcat95"},{"id":3,"name":"Panda12"},{"id":9,"name":"Unknown4045"}]}

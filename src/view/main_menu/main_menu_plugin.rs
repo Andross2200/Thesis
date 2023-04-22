@@ -20,7 +20,7 @@ use crate::{
     model::game_model::game::{Game, GameMode},
     utilities::{
         database_plugin::{
-            create_new_player, get_challenge_fen, ConfigResource, DatabaseConnection,
+            create_new_player, get_challenge_fen, ConfigResource, DatabaseConnection, update_cofig_file,
         },
         script_plugin::ScriptRes, language_plugin::LanguageResource,
     },
@@ -215,7 +215,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                     .insert(MenuButtonAction::LanguageBack);
                     node.spawn(
                         TextBundle::from_section(
-                            format!("{} {}", language.main_menu.language_panel.clone(), config.language),
+                            format!("{} {}", language.main_menu.language_panel.clone(), config.languages[config.selected_language as usize]),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 30.0,
@@ -386,8 +386,18 @@ fn menu_actions(
                         game_state.set(GameState::Game).unwrap();
                     }
                     MenuButtonAction::Multiplayer => {}
-                    MenuButtonAction::LanguageBack => {}
-                    MenuButtonAction::LanguageForward => {}
+                    MenuButtonAction::LanguageBack => {
+                        let num_of_langs = config.languages.len() as i32;
+                        let new_selected_ind = (config.selected_language - 1) % num_of_langs;
+                        config.selected_language = new_selected_ind;
+                        update_cofig_file(&mut config);
+                    }
+                    MenuButtonAction::LanguageForward => {
+                        let num_of_langs = config.languages.len() as i32;
+                        let new_selected_ind = (config.selected_language + 1) % num_of_langs;
+                        config.selected_language = new_selected_ind;
+                        update_cofig_file(&mut config);
+                    }
                     MenuButtonAction::PlayerBack => {
                         for mut text in &mut player_display_text {
                             config.selected_player_id =

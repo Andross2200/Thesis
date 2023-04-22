@@ -61,10 +61,10 @@ impl Plugin for LanguagePlugin {
 }
 
 fn setup_language(mut commands: Commands,config: Res<ConfigResource>) {
-    let language_file_path = LANGUAGE_FILE_FOLDER.to_string() + &config.language + ".json";
+    let language_file_path = LANGUAGE_FILE_FOLDER.to_string() + &config.languages[config.selected_language as usize] + ".json";
     let language_resource_json = fs::read_to_string(language_file_path).expect(&format!(
         "json file with text in {} language should be in folder \"languages\"",
-        config.language.as_str()
+        config.languages[config.selected_language as usize].as_str()
     ));
     let language_resource: LanguageResource = serde_json::from_str(&language_resource_json).expect("Structure of json string should be valid");
     commands.insert_resource(language_resource);

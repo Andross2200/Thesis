@@ -15,7 +15,8 @@ pub struct Player {
 
 #[derive(Debug, Resource, Serialize, Deserialize)]
 pub struct ConfigResource {
-    pub language: String,
+    pub languages: Vec<String>,
+    pub selected_language: i32,
     pub selected_player_id: i32,
     pub local_players: Vec<Player>,
 }
@@ -23,7 +24,7 @@ pub struct ConfigResource {
 impl Default for ConfigResource {
     fn default() -> Self {
         let config_string = fs::read_to_string(FILE_PATH).expect("Should be able to read from file");
-        let new_config: ConfigResource = serde_json::from_str(&config_string).unwrap();
+        let new_config: ConfigResource = serde_json::from_str(&config_string).expect("Config structure should be correct");
         new_config
     }
 }
@@ -326,7 +327,7 @@ pub fn create_new_player(
     update_cofig_file(config.borrow_mut());
 }
 
-fn update_cofig_file(config: &mut ConfigResource) {
+pub fn update_cofig_file(config: &mut ConfigResource) {
     let json_config = serde_json::to_string(&config).expect("Config should be serializable");
     fs::write(FILE_PATH, json_config).expect("File should be rewritten");
 }
