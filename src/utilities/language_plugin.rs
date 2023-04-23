@@ -16,6 +16,7 @@ pub struct MainMenu {
     pub player_panel: String,
     pub create_new_player_button: String,
     pub exit_button: String,
+    pub reload_text: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -6,7 +6,8 @@
     "language_panel": "Language:",
     "player_panel": "Player:",
     "create_new_player_button": "Create New Player",
-    "exit_button": "Exit to Desktop"
+    "exit_button": "Exit to Desktop",
+    "reload_text": "Reload game to apply changes"
   },
   "level_selector": {
     "go_back_button": "Go Back",
@@ -42,7 +43,7 @@
     "move_arrows_panel_label": "Move Block",
     "menu_panel_label": "Menu",
     "complete_button": "Complete",
-    "go_back_button": "Back to Menu",
+    "go_back_button": "Go Back",
     "perls_score_label": "Perl"
   }
 }

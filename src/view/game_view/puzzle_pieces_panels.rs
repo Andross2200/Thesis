@@ -142,6 +142,7 @@ pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageM
                     } collects perl"
                     )))
                     .insert(PuzzlePieceButton);
+                i += 1;
             }
             parent
                 .spawn(ButtonBundle {

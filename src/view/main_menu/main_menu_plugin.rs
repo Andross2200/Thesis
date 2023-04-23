@@ -12,7 +12,7 @@ use bevy::{
     text::{Text, TextStyle},
     ui::{
         AlignItems, BackgroundColor, FlexDirection, Interaction, JustifyContent, PositionType,
-        Size, Style, UiRect, Val,
+        Size, Style, UiRect, Val, Display,
     },
 };
 
@@ -44,6 +44,9 @@ enum MenuButtonAction {
     CreatePlayer,
     Quit,
 }
+
+#[derive(Debug, Component)]
+struct ReloadText;
 
 #[derive(Debug, Component)]
 struct MainMenuView;
@@ -95,7 +98,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                 .with_style(Style {
                     margin: UiRect {
                         top: Val::Px(40.0),
-                        bottom: Val::Px(50.0),
+                        bottom: Val::Px(30.0),
                         ..Default::default()
                     },
                     ..Default::default()
@@ -179,7 +182,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                         language.main_menu.multiplayer_button.clone(),
                         TextStyle {
                             font: image_handler.2.get(0).unwrap().clone(),
-                            font_size: 50.0,
+                            font_size: 40.0,
                             color: Color::BLACK,
                         },
                     ));
@@ -207,6 +210,8 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                         style: Style {
                             size: Size::new(Val::Px(50.0), Val::Px(50.0)),
                             margin: UiRect::all(Val::Px(5.0)),
+                            position_type: PositionType::Absolute,
+                            position: UiRect::left(Val::Px(5.0)),
                             ..Default::default()
                         },
                         image: image_handler.1.get(7).unwrap().clone(),
@@ -231,6 +236,8 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                         style: Style {
                             size: Size::new(Val::Px(50.0), Val::Px(50.0)),
                             margin: UiRect::all(Val::Px(5.0)),
+                            position_type: PositionType::Absolute,
+                            position: UiRect::right(Val::Px(5.0)),
                             ..Default::default()
                         },
                         image: image_handler.1.get(8).unwrap().clone(),
@@ -278,7 +285,7 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                             ),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
-                                font_size: 30.0,
+                                font_size: 25.0,
                                 color: Color::BLACK,
                             },
                         )
@@ -349,12 +356,24 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                         language.main_menu.exit_button.clone(),
                         TextStyle {
                             font: image_handler.2.get(0).unwrap().clone(),
-                            font_size: 35.0,
+                            font_size: 30.0,
                             color: Color::BLACK,
                         },
                     ));
                 })
                 .insert(MenuButtonAction::Quit);
+
+            parent.spawn(TextBundle::from_section(
+                language.main_menu.reload_text.clone(),
+                TextStyle {
+                    font: image_handler.2.get(0).unwrap().clone(),
+                    font_size: 30.0,
+                    color: Color::RED
+            }
+            ).with_style(Style {
+                display: Display::None,
+                ..Default::default()
+            })).insert(ReloadText);
         });
 }
 
@@ -364,6 +383,7 @@ fn menu_actions(
         (Changed<Interaction>, With<Button>),
     >,
     mut player_display_text: Query<&mut Text, With<PlayerDisplayText>>,
+    mut reload_text: Query<&mut Style, With<ReloadText>>,
     mut app_exit_events: EventWriter<AppExit>,
     mut game_state: ResMut<State<GameState>>,
     mut db_conn: ResMut<DatabaseConnection>,
@@ -391,12 +411,18 @@ fn menu_actions(
                         let new_selected_ind = (config.selected_language - 1) % num_of_langs;
                         config.selected_language = new_selected_ind;
                         update_cofig_file(&mut config);
+                        for mut style in &mut reload_text {
+                            style.display = Display::Flex;
+                        }
                     }
                     MenuButtonAction::LanguageForward => {
                         let num_of_langs = config.languages.len() as i32;
                         let new_selected_ind = (config.selected_language + 1) % num_of_langs;
                         config.selected_language = new_selected_ind;
                         update_cofig_file(&mut config);
+                        for mut style in &mut reload_text {
+                            style.display = Display::Flex;
+                        }
                     }
                     MenuButtonAction::PlayerBack => {
                         for mut text in &mut player_display_text {
