@@ -19,7 +19,8 @@ use crate::{
             save_challenge_result, update_score_for_tutorial_level, ConfigResource,
             DatabaseConnection,
         },
-        script_plugin::{reset_level, ScriptRes}, language_plugin::LanguageResource,
+        language_plugin::LanguageResource,
+        script_plugin::{reset_level, ScriptRes},
     },
     view::{image_handler::ImageMap, GameState},
 };
@@ -124,8 +125,14 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, language: Res<
                     ..default()
                 })
                 .with_children(|block_node| {
-                    let mut i: usize = 0;
-                    for str in language.game.blocks_panels_selector_buttons.clone() {
+                    // let mut i: usize = 0;
+                    for (i, str) in language
+                        .game
+                        .blocks_panels_selector_buttons
+                        .clone()
+                        .into_iter()
+                        .enumerate()
+                    {
                         block_node
                             .spawn(ButtonBundle {
                                 style: Style {
@@ -158,7 +165,6 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, language: Res<
                             })
                             .insert(Name::new(BUTTON_NAMES[i]))
                             .insert(PuzzlePieceTypeButton);
-                        i += 1;
                     }
                 });
             parent.spawn((TextBundle::from_section(
@@ -287,7 +293,7 @@ fn puzzle_type_buttons(
         ),
     >,
     mut panel: Query<Entity, With<PuzzlePiecePanel>>,
-    language: Res<LanguageResource>
+    language: Res<LanguageResource>,
 ) {
     for (interaction, button_name, mut color) in &mut interaction_query {
         match *interaction {
@@ -296,7 +302,11 @@ fn puzzle_type_buttons(
                     for p in &mut panel {
                         commands.entity(p).despawn();
                     }
-                    create_pawn_actions_panel(&mut commands, &image_handler, &language.game.pawn_action_panel);
+                    create_pawn_actions_panel(
+                        &mut commands,
+                        &image_handler,
+                        &language.game.pawn_action_panel,
+                    );
                 }
                 *color = BackgroundColor(Color::YELLOW);
             }

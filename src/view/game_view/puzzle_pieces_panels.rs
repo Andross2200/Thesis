@@ -3,7 +3,8 @@
 use bevy::prelude::*;
 
 use crate::{
-    model::game_model::game::Game, utilities::{script_plugin::ScriptRes, language_plugin::PuzzleButtonPanel},
+    model::game_model::game::Game,
+    utilities::{language_plugin::PuzzleButtonPanel, script_plugin::ScriptRes},
     view::image_handler::ImageMap,
 };
 
@@ -24,7 +25,11 @@ pub struct ClosePuzzlePiecePanelButton;
 #[derive(Component)]
 pub struct PuzzlePiecePanel;
 
-pub fn create_pawn_actions_panel(commands: &mut Commands, image_handler: &ImageMap, language: &PuzzleButtonPanel) {
+pub fn create_pawn_actions_panel(
+    commands: &mut Commands,
+    image_handler: &ImageMap,
+    language: &PuzzleButtonPanel,
+) {
     commands
         .spawn(NodeBundle {
             style: Style {

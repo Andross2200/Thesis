@@ -80,7 +80,7 @@ fn init_view(
     mut level_selector_data: ResMut<LevelSelectorData>,
     db_conn: ResMut<DatabaseConnection>,
     config: Res<ConfigResource>,
-    language: Res<LanguageResource>
+    language: Res<LanguageResource>,
 ) {
     let window = windows.get_primary().unwrap();
     info!(
@@ -147,7 +147,7 @@ fn init_view(
         commands.borrow_mut(),
         level_selector_data.borrow_mut(),
         image_handler.borrow(),
-        language.borrow()
+        language.borrow(),
     );
 
     // Turn page buttons
@@ -208,7 +208,7 @@ fn create_levele_panels(
     commands: &mut Commands,
     level_selector_data: &mut ResMut<LevelSelectorData>,
     image_handler: &Res<ImageMap>,
-    language: &Res<LanguageResource>
+    language: &Res<LanguageResource>,
 ) {
     if !level_selector_data.panels.is_empty() {
         // for entity in 0..level_selector_data.panels.len() {
@@ -266,7 +266,11 @@ fn create_levele_panels(
             let level_label = commands
                 .spawn(
                     TextBundle::from_section(
-                        format!("{} {}", language.level_selector.level_label.clone(), level_info.level_id),
+                        format!(
+                            "{} {}",
+                            language.level_selector.level_label.clone(),
+                            level_info.level_id
+                        ),
                         TextStyle {
                             font: image_handler.2.get(1).unwrap().clone(),
                             font_size: 40.0,
@@ -302,7 +306,22 @@ fn create_levele_panels(
                 )
                 .id();
             let score = if level_info.number_of_steps.is_some() {
-                format!("{} {} {}", language.level_selector.completed_label.get(0).clone().unwrap(), level_info.number_of_steps.unwrap(), language.level_selector.completed_label.get(1).clone().unwrap())
+                format!(
+                    "{} {} {}",
+                    language
+                        .level_selector
+                        .completed_label
+                        .get(0)
+                        .unwrap()
+                        .clone(),
+                    level_info.number_of_steps.unwrap(),
+                    language
+                        .level_selector
+                        .completed_label
+                        .get(1)
+                        .unwrap()
+                        .clone()
+                )
             } else {
                 language.level_selector.not_completed_label.clone()
             };
@@ -423,7 +442,7 @@ fn switch_page(
     mut level_selector_data: ResMut<LevelSelectorData>,
     mut commands: Commands,
     image_handler: Res<ImageMap>,
-    language: Res<LanguageResource>
+    language: Res<LanguageResource>,
 ) {
     for (interaction, button_type, mut back_color) in &mut interaction_query {
         match *interaction {
@@ -444,7 +463,7 @@ fn switch_page(
                                 commands.borrow_mut(),
                                 level_selector_data.borrow_mut(),
                                 image_handler.borrow(),
-                                language.borrow()
+                                language.borrow(),
                             );
                         }
                     }
@@ -457,7 +476,7 @@ fn switch_page(
                                 commands.borrow_mut(),
                                 level_selector_data.borrow_mut(),
                                 image_handler.borrow(),
-                                language.borrow()
+                                language.borrow(),
                             );
                         }
                     }

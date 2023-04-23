@@ -1,6 +1,6 @@
 use std::fs;
 
-use bevy::prelude::{Plugin, Res, Commands, Resource};
+use bevy::prelude::{Commands, Plugin, Res, Resource};
 use serde::{Deserialize, Serialize};
 
 use super::database_plugin::ConfigResource;
@@ -16,7 +16,7 @@ pub struct MainMenu {
     pub player_panel: String,
     pub create_new_player_button: String,
     pub exit_button: String,
-    pub reload_text: String
+    pub reload_text: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -25,14 +25,14 @@ pub struct LevelSelector {
     pub level_label: String,
     pub not_completed_label: String,
     pub completed_label: Vec<String>,
-    pub selected_button: String
+    pub selected_button: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PuzzleButtonPanel {
     pub label: String,
     pub buttons: Vec<String>,
-    pub close_button: String
+    pub close_button: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,14 +44,14 @@ pub struct GameText {
     pub menu_panel_label: String,
     pub complete_button: String,
     pub go_back_button: String,
-    pub perls_score_label: String
+    pub perls_score_label: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Resource)]
 pub struct LanguageResource {
     pub main_menu: MainMenu,
     pub level_selector: LevelSelector,
-    pub game: GameText
+    pub game: GameText,
 }
 pub struct LanguagePlugin;
 
@@ -61,12 +61,17 @@ impl Plugin for LanguagePlugin {
     }
 }
 
-fn setup_language(mut commands: Commands,config: Res<ConfigResource>) {
-    let language_file_path = LANGUAGE_FILE_FOLDER.to_string() + &config.languages[config.selected_language as usize] + ".json";
-    let language_resource_json = fs::read_to_string(language_file_path).expect(&format!(
-        "json file with text in {} language should be in folder \"languages\"",
-        config.languages[config.selected_language as usize].as_str()
-    ));
-    let language_resource: LanguageResource = serde_json::from_str(&language_resource_json).expect("Structure of json string should be valid");
+fn setup_language(mut commands: Commands, config: Res<ConfigResource>) {
+    let language_file_path = LANGUAGE_FILE_FOLDER.to_string()
+        + &config.languages[config.selected_language as usize]
+        + ".json";
+    let language_resource_json = fs::read_to_string(language_file_path).unwrap_or_else(|_| {
+        panic!(
+            "json file with text in {} language should be in folder \"languages\"",
+            config.languages[config.selected_language as usize].as_str()
+        )
+    });
+    let language_resource: LanguageResource = serde_json::from_str(&language_resource_json)
+        .expect("Structure of json string should be valid");
     commands.insert_resource(language_resource);
 }

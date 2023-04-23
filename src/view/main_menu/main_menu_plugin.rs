@@ -11,8 +11,8 @@ use bevy::{
     },
     text::{Text, TextStyle},
     ui::{
-        AlignItems, BackgroundColor, FlexDirection, Interaction, JustifyContent, PositionType,
-        Size, Style, UiRect, Val, Display,
+        AlignItems, BackgroundColor, Display, FlexDirection, Interaction, JustifyContent,
+        PositionType, Size, Style, UiRect, Val,
     },
 };
 
@@ -20,9 +20,11 @@ use crate::{
     model::game_model::game::{Game, GameMode},
     utilities::{
         database_plugin::{
-            create_new_player, get_challenge_fen, ConfigResource, DatabaseConnection, update_cofig_file,
+            create_new_player, get_challenge_fen, update_cofig_file, ConfigResource,
+            DatabaseConnection,
         },
-        script_plugin::ScriptRes, language_plugin::LanguageResource,
+        language_plugin::LanguageResource,
+        script_plugin::ScriptRes,
     },
     view::{despawn_screen, image_handler::ImageMap, GameState},
 };
@@ -63,7 +65,12 @@ impl Plugin for MainMenuPlugin {
     }
 }
 
-fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<ConfigResource>, language: Res<LanguageResource>) {
+fn init_setup(
+    mut commands: Commands,
+    image_handler: Res<ImageMap>,
+    config: Res<ConfigResource>,
+    language: Res<LanguageResource>,
+) {
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -220,7 +227,11 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                     .insert(MenuButtonAction::LanguageBack);
                     node.spawn(
                         TextBundle::from_section(
-                            format!("{} {}", language.main_menu.language_panel.clone(), config.languages[config.selected_language as usize]),
+                            format!(
+                                "{} {}",
+                                language.main_menu.language_panel.clone(),
+                                config.languages[config.selected_language as usize]
+                            ),
                             TextStyle {
                                 font: image_handler.2.get(0).unwrap().clone(),
                                 font_size: 30.0,
@@ -276,7 +287,8 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                     node.spawn(
                         TextBundle::from_section(
                             format!(
-                                "{} {}", language.main_menu.player_panel.clone(),
+                                "{} {}",
+                                language.main_menu.player_panel.clone(),
                                 config
                                     .local_players
                                     .get(config.selected_player_id as usize)
@@ -363,17 +375,22 @@ fn init_setup(mut commands: Commands, image_handler: Res<ImageMap>, config: Res<
                 })
                 .insert(MenuButtonAction::Quit);
 
-            parent.spawn(TextBundle::from_section(
-                language.main_menu.reload_text.clone(),
-                TextStyle {
-                    font: image_handler.2.get(0).unwrap().clone(),
-                    font_size: 30.0,
-                    color: Color::RED
-            }
-            ).with_style(Style {
-                display: Display::None,
-                ..Default::default()
-            })).insert(ReloadText);
+            parent
+                .spawn(
+                    TextBundle::from_section(
+                        language.main_menu.reload_text.clone(),
+                        TextStyle {
+                            font: image_handler.2.get(0).unwrap().clone(),
+                            font_size: 30.0,
+                            color: Color::RED,
+                        },
+                    )
+                    .with_style(Style {
+                        display: Display::None,
+                        ..Default::default()
+                    }),
+                )
+                .insert(ReloadText);
         });
 }
 

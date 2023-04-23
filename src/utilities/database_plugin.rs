@@ -23,8 +23,10 @@ pub struct ConfigResource {
 
 impl Default for ConfigResource {
     fn default() -> Self {
-        let config_string = fs::read_to_string(FILE_PATH).expect("Should be able to read from file");
-        let new_config: ConfigResource = serde_json::from_str(&config_string).expect("Config structure should be correct");
+        let config_string =
+            fs::read_to_string(FILE_PATH).expect("Should be able to read from file");
+        let new_config: ConfigResource =
+            serde_json::from_str(&config_string).expect("Config structure should be correct");
         new_config
     }
 }
@@ -54,7 +56,7 @@ pub struct DatabasePlugin;
 impl Plugin for DatabasePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(connect_to_db)
-        .init_resource::<ConfigResource>();
+            .init_resource::<ConfigResource>();
     }
 }
 
