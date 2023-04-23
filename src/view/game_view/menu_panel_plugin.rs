@@ -19,6 +19,7 @@ use crate::{
             save_challenge_result, update_score_for_tutorial_level, ConfigResource,
             DatabaseConnection,
         },
+        language_plugin::LanguageResource,
         script_plugin::{reset_level, ScriptRes},
     },
     view::{image_handler::ImageMap, GameState},
@@ -26,6 +27,7 @@ use crate::{
 
 const LEVEL_DISPLAY_BUTTON_SIZE: f32 = 50.0;
 const LEVEL_DISPLAY_BUTTON_MARGIN: f32 = 25.0;
+const BUTTON_NAMES: [&str; 4] = ["Pawn Actions", "Flow Control", "Numbers", "Logic"];
 
 #[derive(Debug, Component)]
 struct GoBackButton;
@@ -76,7 +78,7 @@ impl Plugin for MenuViewPlugin {
     }
 }
 
-fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
+fn create_panel(mut commands: Commands, image_map: Res<ImageMap>, language: Res<LanguageResource>) {
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -100,7 +102,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
         })
         .with_children(|parent| {
             parent.spawn((TextBundle::from_section(
-                "Blocks",
+                language.game.blocks_button_panel.clone(),
                 TextStyle {
                     font: image_map.2.get(0).unwrap().clone(),
                     font_size: 50.0,
@@ -123,9 +125,14 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                     ..default()
                 })
                 .with_children(|block_node| {
-                    let block_types: [&str; 4] =
-                        ["Pawn Actions", "Flow Control", "Numbers", "Logic"];
-                    for str in block_types {
+                    // let mut i: usize = 0;
+                    for (i, str) in language
+                        .game
+                        .blocks_panels_selector_buttons
+                        .clone()
+                        .into_iter()
+                        .enumerate()
+                    {
                         block_node
                             .spawn(ButtonBundle {
                                 style: Style {
@@ -146,7 +153,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                             .with_children(|button| {
                                 button.spawn(
                                     (TextBundle::from_section(
-                                        str,
+                                        str.clone(),
                                         TextStyle {
                                             font: image_map.2.get(0).unwrap().clone(),
                                             font_size: 20.0,
@@ -156,12 +163,12 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                                     .with_text_alignment(TextAlignment::CENTER),
                                 );
                             })
-                            .insert(Name::new(str))
+                            .insert(Name::new(BUTTON_NAMES[i]))
                             .insert(PuzzlePieceTypeButton);
                     }
                 });
             parent.spawn((TextBundle::from_section(
-                "Move block",
+                language.game.move_arrows_panel_label.clone(),
                 TextStyle {
                     font: image_map.2.get(0).unwrap().clone(),
                     font_size: 28.0,
@@ -214,7 +221,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                         .insert(PuzzleMovementButtons::Down);
                 });
             parent.spawn((TextBundle::from_section(
-                "Menu",
+                language.game.menu_panel_label.clone(),
                 TextStyle {
                     font: image_map.2.get(0).unwrap().clone(),
                     font_size: 40.0,
@@ -236,7 +243,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                 })
                 .with_children(|parent| {
                     parent.spawn((TextBundle::from_section(
-                        "Complete",
+                        language.game.complete_button.clone(),
                         TextStyle {
                             font: image_map.2.get(0).unwrap().clone(),
                             font_size: 30.0,
@@ -260,7 +267,7 @@ fn create_panel(mut commands: Commands, image_map: Res<ImageMap>) {
                 })
                 .with_children(|parent| {
                     parent.spawn((TextBundle::from_section(
-                        "Back to Menu",
+                        language.game.go_back_button.clone(),
                         TextStyle {
                             font: image_map.2.get(0).unwrap().clone(),
                             font_size: 20.0,
@@ -286,6 +293,7 @@ fn puzzle_type_buttons(
         ),
     >,
     mut panel: Query<Entity, With<PuzzlePiecePanel>>,
+    language: Res<LanguageResource>,
 ) {
     for (interaction, button_name, mut color) in &mut interaction_query {
         match *interaction {
@@ -294,7 +302,11 @@ fn puzzle_type_buttons(
                     for p in &mut panel {
                         commands.entity(p).despawn();
                     }
-                    create_pawn_actions_panel(&mut commands, &image_handler);
+                    create_pawn_actions_panel(
+                        &mut commands,
+                        &image_handler,
+                        &language.game.pawn_action_panel,
+                    );
                 }
                 *color = BackgroundColor(Color::YELLOW);
             }

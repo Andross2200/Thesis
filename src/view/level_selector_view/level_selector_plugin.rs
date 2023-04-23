@@ -6,6 +6,7 @@ use crate::model::game_model::game::GameMode;
 use crate::utilities::database_plugin::{
     get_all_levels_for_player, AllLevelsWithSolutions, ConfigResource,
 };
+use crate::utilities::language_plugin::LanguageResource;
 use crate::{
     model::game_model::game::Game,
     utilities::{database_plugin::DatabaseConnection, script_plugin::ScriptRes},
@@ -79,6 +80,7 @@ fn init_view(
     mut level_selector_data: ResMut<LevelSelectorData>,
     db_conn: ResMut<DatabaseConnection>,
     config: Res<ConfigResource>,
+    language: Res<LanguageResource>,
 ) {
     let window = windows.get_primary().unwrap();
     info!(
@@ -105,7 +107,6 @@ fn init_view(
             .unwrap()
             .id,
     );
-    info!("{:?}", level_selector_data.all_levels.len());
 
     commands
         .spawn(ButtonBundle {
@@ -131,7 +132,7 @@ fn init_view(
         .insert(LevelSelectorView)
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "Go Back",
+                language.level_selector.go_back_button.clone(),
                 TextStyle {
                     font: image_handler.2.get(0).unwrap().clone(),
                     font_size: 30.0,
@@ -146,6 +147,7 @@ fn init_view(
         commands.borrow_mut(),
         level_selector_data.borrow_mut(),
         image_handler.borrow(),
+        language.borrow(),
     );
 
     // Turn page buttons
@@ -206,13 +208,14 @@ fn create_levele_panels(
     commands: &mut Commands,
     level_selector_data: &mut ResMut<LevelSelectorData>,
     image_handler: &Res<ImageMap>,
+    language: &Res<LanguageResource>,
 ) {
     if !level_selector_data.panels.is_empty() {
-        for entity in 0..level_selector_data.panels.len() {
-            commands
-                .entity(*level_selector_data.panels.get(entity).unwrap())
-                .despawn_recursive();
-        }
+        // for entity in 0..level_selector_data.panels.len() {
+        //     commands
+        //         .entity(*level_selector_data.panels.get(entity).unwrap())
+        //         .despawn_recursive();
+        // }
         level_selector_data.panels.clear();
     }
     let mut item_counter = level_selector_data.start_index;
@@ -263,7 +266,11 @@ fn create_levele_panels(
             let level_label = commands
                 .spawn(
                     TextBundle::from_section(
-                        format!("Level {}", level_info.level_id),
+                        format!(
+                            "{} {}",
+                            language.level_selector.level_label.clone(),
+                            level_info.level_id
+                        ),
                         TextStyle {
                             font: image_handler.2.get(1).unwrap().clone(),
                             font_size: 40.0,
@@ -299,9 +306,24 @@ fn create_levele_panels(
                 )
                 .id();
             let score = if level_info.number_of_steps.is_some() {
-                format!("Completed in {} steps", level_info.number_of_steps.unwrap())
+                format!(
+                    "{} {} {}",
+                    language
+                        .level_selector
+                        .completed_label
+                        .get(0)
+                        .unwrap()
+                        .clone(),
+                    level_info.number_of_steps.unwrap(),
+                    language
+                        .level_selector
+                        .completed_label
+                        .get(1)
+                        .unwrap()
+                        .clone()
+                )
             } else {
-                "Not completed".to_string()
+                language.level_selector.not_completed_label.clone()
             };
             let score_label = commands
                 .spawn(
@@ -338,7 +360,7 @@ fn create_levele_panels(
                 })
                 .with_children(|button| {
                     button.spawn(TextBundle::from_section(
-                        "Select",
+                        language.level_selector.selected_button.clone(),
                         TextStyle {
                             font: image_handler.2.get(1).unwrap().clone(),
                             font_size: 40.0,
@@ -420,11 +442,17 @@ fn switch_page(
     mut level_selector_data: ResMut<LevelSelectorData>,
     mut commands: Commands,
     image_handler: Res<ImageMap>,
+    language: Res<LanguageResource>,
 ) {
     for (interaction, button_type, mut back_color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
+                for entity in 0..level_selector_data.panels.len() {
+                    commands
+                        .entity(*level_selector_data.panels.get(entity).unwrap())
+                        .despawn_recursive();
+                }
                 match *button_type {
                     PageSwitchButton::Forward => {
                         let next_page_start = level_selector_data.start_index
@@ -435,6 +463,7 @@ fn switch_page(
                                 commands.borrow_mut(),
                                 level_selector_data.borrow_mut(),
                                 image_handler.borrow(),
+                                language.borrow(),
                             );
                         }
                     }
@@ -447,6 +476,7 @@ fn switch_page(
                                 commands.borrow_mut(),
                                 level_selector_data.borrow_mut(),
                                 image_handler.borrow(),
+                                language.borrow(),
                             );
                         }
                     }

@@ -1,3 +1,5 @@
+use std::env;
+
 use bevy::prelude::*;
 
 mod model;
@@ -5,6 +7,7 @@ mod utilities;
 mod view;
 
 use utilities::database_plugin::DatabasePlugin;
+use utilities::language_plugin::LanguagePlugin;
 use view::game_view::game_view_plugin::GameViewPlugin;
 use view::image_handler::ImageHandlerPlugin;
 use view::level_selector_view::level_selector_plugin::LevelSelectorPlugin;
@@ -20,6 +23,7 @@ const SHIFT_DOWN: f32 = 20.0;
 pub struct MainCamera;
 
 fn main() {
+    env::set_var("RUST_BACKTRACE", "1");
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
@@ -30,8 +34,9 @@ fn main() {
         }))
         .add_startup_system(setup)
         .add_state(GameState::MainMenu)
-        .add_plugin(ImageHandlerPlugin)
         .add_plugin(DatabasePlugin)
+        .add_plugin(ImageHandlerPlugin)
+        .add_plugin(LanguagePlugin)
         .add_plugin(GameViewPlugin)
         .add_plugin(LevelSelectorPlugin)
         .add_plugin(MainMenuPlugin)

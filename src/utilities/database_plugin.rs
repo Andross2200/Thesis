@@ -13,11 +13,22 @@ pub struct Player {
     pub name: String,
 }
 
-#[derive(Debug, Resource, Default, Serialize, Deserialize)]
+#[derive(Debug, Resource, Serialize, Deserialize)]
 pub struct ConfigResource {
-    pub language: String,
+    pub languages: Vec<String>,
+    pub selected_language: i32,
     pub selected_player_id: i32,
     pub local_players: Vec<Player>,
+}
+
+impl Default for ConfigResource {
+    fn default() -> Self {
+        let config_string =
+            fs::read_to_string(FILE_PATH).expect("Should be able to read from file");
+        let new_config: ConfigResource =
+            serde_json::from_str(&config_string).expect("Config structure should be correct");
+        new_config
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Default)]
@@ -45,7 +56,7 @@ pub struct DatabasePlugin;
 impl Plugin for DatabasePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(connect_to_db)
-            .add_startup_system(init_player);
+            .init_resource::<ConfigResource>();
     }
 }
 
@@ -259,12 +270,6 @@ pub fn save_challenge_result(
         .expect("Transaction for getting all levels must be commited");
 }
 
-fn init_player(mut commands: Commands) {
-    let config_string = fs::read_to_string(FILE_PATH).expect("Should be able to read from file");
-    let config: ConfigResource = serde_json::from_str(&config_string).unwrap();
-    commands.insert_resource(config);
-}
-
 pub fn create_new_player(
     db_conn: &mut ResMut<DatabaseConnection>,
     config: &mut ResMut<ConfigResource>,
@@ -324,7 +329,7 @@ pub fn create_new_player(
     update_cofig_file(config.borrow_mut());
 }
 
-fn update_cofig_file(config: &mut ConfigResource) {
+pub fn update_cofig_file(config: &mut ConfigResource) {
     let json_config = serde_json::to_string(&config).expect("Config should be serializable");
     fs::write(FILE_PATH, json_config).expect("File should be rewritten");
 }

@@ -4,7 +4,10 @@ use self::LevelControlButtonType::*;
 use super::despawn_screen;
 use crate::{
     model::game_model::game::{Game, LevelCell},
-    utilities::script_plugin::{reset_level, ScriptRes, ScriptRunStatus},
+    utilities::{
+        language_plugin::LanguageResource,
+        script_plugin::{reset_level, ScriptRes, ScriptRunStatus},
+    },
     view::{image_handler::ImageMap, GameState},
     MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH, SHIFT_DOWN, SHIFT_TO_RIGHT,
 };
@@ -79,6 +82,7 @@ fn create_panel(
     asset_server: Res<AssetServer>,
     game: Res<Game>,
     image_map: Res<ImageMap>,
+    language: Res<LanguageResource>,
 ) {
     let image_size = min(
         MAX_LEVEL_WIDTH as u32 / game.columns,
@@ -141,7 +145,11 @@ fn create_panel(
         commands.entity(background).push_children(&perls);
     }
     let button_panel = create_button_panel(&mut commands, &image_map);
-    let info_panel = create_info_panel(&mut commands, &image_map);
+    let info_panel = create_info_panel(
+        &mut commands,
+        &image_map,
+        language.game.perls_score_label.clone(),
+    );
     commands
         .entity(background)
         .insert(Name::new("Level"))
@@ -272,12 +280,12 @@ fn create_button(
         .id();
 }
 
-fn create_info_panel(commands: &mut Commands, image_map: &ImageMap) -> Entity {
+fn create_info_panel(commands: &mut Commands, image_map: &ImageMap, perl_label: String) -> Entity {
     commands
         .spawn((
             TextBundle::from_sections([
                 TextSection::new(
-                    "Perl: ",
+                    format!("{perl_label}: "),
                     TextStyle {
                         font: image_map.2.get(0).unwrap().clone(),
                         font_size: 40.0,
