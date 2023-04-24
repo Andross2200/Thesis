@@ -7,6 +7,13 @@ use serde::{Deserialize, Serialize};
 
 const FILE_PATH: &str = "./config.json";
 
+#[derive(Clone, Debug)]
+pub struct ChallengeScore {
+    pub prefab_id: i32,
+    pub level_name: String,
+    pub num_of_steps: i32,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Player {
     pub id: i32,
@@ -176,7 +183,7 @@ pub fn update_score_for_tutorial_level(
         .expect("Transaction for getting all levels must be commited");
 }
 
-pub fn get_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> String {
+pub fn get_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> (i32, String) {
     let prefabs = db_conn
         .conn
         .query_map(
@@ -189,7 +196,10 @@ pub fn get_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> String {
         .expect("Query must be successful");
     let mut rng = rand::thread_rng();
     let rand_prefab = rng.gen_range(0..prefabs.len());
-    make_fen_from_prefab(prefabs.get(rand_prefab).unwrap().fen.clone())
+    (
+        prefabs.get(rand_prefab).unwrap().prefab_id,
+        make_fen_from_prefab(prefabs.get(rand_prefab).unwrap().fen.clone()),
+    )
 }
 
 fn make_fen_from_prefab(prefab: String) -> String {
@@ -250,10 +260,11 @@ pub fn save_challenge_result(
     player_id: i32,
     fen: String,
     num_of_steps: i32,
+    level_id: i32,
 ) {
     let insert_query = format!(
-        r"INSERT INTO challenge_solutions (fen, num_of_steps, player_id)
-        VALUES ('{fen}', {num_of_steps}, {player_id});"
+        r"INSERT INTO challenge_solutions (fen, num_of_steps, player_id, prefab_id)
+        VALUES ('{fen}', {num_of_steps}, {player_id}, {level_id});"
     );
 
     let mut transaction = db_conn
@@ -332,4 +343,39 @@ pub fn create_new_player(
 pub fn update_cofig_file(config: &mut ConfigResource) {
     let json_config = serde_json::to_string(&config).expect("Config should be serializable");
     fs::write(FILE_PATH, json_config).expect("File should be rewritten");
+}
+
+pub fn get_best_ten_challenge_scores_for_player(
+    db_conn: &mut ResMut<DatabaseConnection>,
+    player_id: i32,
+) -> Vec<ChallengeScore> {
+    let query = format!(
+        r"SELECT cs.prefab_id, cp.level_name, cs.num_of_steps FROM challenge_solutions cs
+        LEFT JOIN challenge_prefabs cp ON cs.prefab_id = cp.id
+        WHERE cs.player_id = {player_id}
+        ORDER BY cs.num_of_steps DESC;"
+    );
+    let mut transaction = db_conn
+        .conn
+        .start_transaction(TxOpts::default())
+        .expect("New transaction must be started");
+
+    let all_player_scores = transaction
+        .query_map(query, |(prefab_id, level_name, num_of_steps)| {
+            ChallengeScore {
+                prefab_id,
+                level_name,
+                num_of_steps,
+            }
+        })
+        .expect("Query must be successful");
+
+    transaction
+        .commit()
+        .expect("Transaction should be committed");
+    if all_player_scores.len() >= 10 {
+        all_player_scores[0..10].to_vec()
+    } else {
+        all_player_scores.to_vec()
+    }
 }

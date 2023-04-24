@@ -12,6 +12,7 @@ use view::game_view::game_view_plugin::GameViewPlugin;
 use view::image_handler::ImageHandlerPlugin;
 use view::level_selector_view::level_selector_plugin::LevelSelectorPlugin;
 use view::main_menu::main_menu_plugin::MainMenuPlugin;
+use view::scoreboard_view::scoreboard_plugin::ScoreboardPlugin;
 use view::GameState;
 
 const MAX_LEVEL_WIDTH: f32 = 500.0;
@@ -40,6 +41,7 @@ fn main() {
         .add_plugin(GameViewPlugin)
         .add_plugin(LevelSelectorPlugin)
         .add_plugin(MainMenuPlugin)
+        .add_plugin(ScoreboardPlugin)
         .run();
 }
 
