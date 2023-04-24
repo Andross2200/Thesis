@@ -39,6 +39,7 @@ enum MenuButtonAction {
     Tutorial,
     Challenge,
     Multiplayer,
+    Scoreboard,
     LanguageBack,
     LanguageForward,
     PlayerBack,
@@ -76,13 +77,13 @@ fn init_setup(
             style: Style {
                 position_type: PositionType::Absolute,
                 position: UiRect {
-                    top: Val::Percent(10.0),
+                    top: Val::Percent(5.0),
                     left: Val::Percent(25.0),
                     ..Default::default()
                 },
                 size: Size {
                     width: Val::Percent(50.0),
-                    height: Val::Percent(80.0),
+                    height: Val::Percent(90.0),
                 },
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
@@ -195,6 +196,34 @@ fn init_setup(
                     ));
                 })
                 .insert(MenuButtonAction::Multiplayer);
+
+            // Scoreboard button
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size {
+                            width: Val::Px(200.0),
+                            height: Val::Px(50.0),
+                        },
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::vertical(Val::Px(BUTTON_MARGIN)),
+                        justify_content: JustifyContent::Center,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                })
+                .with_children(|button| {
+                    button.spawn(TextBundle::from_section(
+                        "Scoreboard",
+                        TextStyle {
+                            font: image_handler.2.get(0).unwrap().clone(),
+                            font_size: 40.0,
+                            color: Color::BLACK,
+                        },
+                    ));
+                })
+                .insert(MenuButtonAction::Scoreboard);
 
             // Change language panel
             parent
@@ -417,12 +446,15 @@ fn menu_actions(
                         game_state.set(GameState::LevelSelector).unwrap();
                     }
                     MenuButtonAction::Challenge => {
-                        let fen = get_challenge_fen(db_conn.borrow_mut());
-                        *game = Game::init_from_fen(fen, 0, GameMode::Challenge);
+                        let (prefab_id, fen) = get_challenge_fen(db_conn.borrow_mut());
+                        *game = Game::init_from_fen(fen, prefab_id, GameMode::Challenge);
                         *script_res = ScriptRes::new();
                         game_state.set(GameState::Game).unwrap();
                     }
                     MenuButtonAction::Multiplayer => {}
+                    MenuButtonAction::Scoreboard => {
+                        game_state.set(GameState::Scoreboard).unwrap();
+                    }
                     MenuButtonAction::LanguageBack => {
                         let num_of_langs = config.languages.len() as i32;
                         let new_selected_ind = (config.selected_language - 1) % num_of_langs;

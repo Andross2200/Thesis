@@ -422,6 +422,7 @@ fn complete_game_button(
                             .id,
                         game.fen.clone(),
                         game.solution,
+                        game.level_id,
                     );
                     game_state.set(GameState::MainMenu).unwrap();
                 }
