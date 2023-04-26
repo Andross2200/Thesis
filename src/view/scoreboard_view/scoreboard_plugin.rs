@@ -4,8 +4,8 @@ use std::borrow::BorrowMut;
 
 use bevy::{
     prelude::{
-        info, App, BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component,
-        NodeBundle, Plugin, Query, Res, ResMut, State, SystemSet, TextBundle, With,
+        App, BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component, NodeBundle,
+        Plugin, Query, Res, ResMut, State, SystemSet, TextBundle, With,
     },
     text::TextStyle,
     ui::{
@@ -15,8 +15,11 @@ use bevy::{
 };
 
 use crate::{
-    utilities::database_plugin::{
-        get_best_ten_challenge_scores_for_player, ConfigResource, DatabaseConnection,
+    utilities::{
+        database_plugin::{
+            get_best_ten_challenge_scores_for_player, ConfigResource, DatabaseConnection,
+        },
+        language_plugin::LanguageResource,
     },
     view::{despawn_screen, image_handler::ImageMap, GameState},
 };
@@ -45,6 +48,7 @@ fn init_view(
     image_handler: Res<ImageMap>,
     mut db_conn: ResMut<DatabaseConnection>,
     config: Res<ConfigResource>,
+    language: Res<LanguageResource>,
 ) {
     let main_panel = commands
         .spawn(NodeBundle {
@@ -71,7 +75,7 @@ fn init_view(
             // View title
             parent.spawn(
                 TextBundle::from_section(
-                    "Scoreboard",
+                    language.scoreboard.title.clone(),
                     TextStyle {
                         font: image_handler.2.get(1).unwrap().clone(),
                         font_size: 80.0,
@@ -96,8 +100,6 @@ fn init_view(
         config.local_players[config.selected_player_id as usize].id,
     );
 
-    info!("{:?}", first_ten_scores);
-
     let challenge_scores = commands
         .spawn(NodeBundle {
             style: Style {
@@ -111,7 +113,7 @@ fn init_view(
         .with_children(|parent| {
             parent.spawn(
                 TextBundle::from_section(
-                    "Challenge mode",
+                    language.scoreboard.challenge_scores_title.clone(),
                     TextStyle {
                         font: image_handler.2.get(0).unwrap().clone(),
                         font_size: 40.0,
@@ -215,7 +217,7 @@ fn init_view(
         })
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "Go Back",
+                language.scoreboard.go_back_button.clone(),
                 TextStyle {
                     font: image_handler.2.get(0).unwrap().clone(),
                     font_size: 30.0,

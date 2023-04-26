@@ -5,13 +5,14 @@ use serde::{Deserialize, Serialize};
 
 use super::database_plugin::ConfigResource;
 
-const LANGUAGE_FILE_FOLDER: &str = "languages/";
+const LANGUAGE_FILE_FOLDER: &str = "assets/languages/";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MainMenu {
     pub tutorial_button: String,
     pub challenge_button: String,
     pub multiplayer_button: String,
+    pub scoreboard_button: String,
     pub language_panel: String,
     pub player_panel: String,
     pub create_new_player_button: String,
@@ -47,11 +48,19 @@ pub struct GameText {
     pub perls_score_label: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ScoreboardText {
+    pub title: String,
+    pub challenge_scores_title: String,
+    pub go_back_button: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, Resource)]
 pub struct LanguageResource {
     pub main_menu: MainMenu,
     pub level_selector: LevelSelector,
     pub game: GameText,
+    pub scoreboard: ScoreboardText,
 }
 pub struct LanguagePlugin;
 

@@ -215,7 +215,7 @@ fn init_setup(
                 })
                 .with_children(|button| {
                     button.spawn(TextBundle::from_section(
-                        "Scoreboard",
+                        language.main_menu.scoreboard_button.clone(),
                         TextStyle {
                             font: image_handler.2.get(0).unwrap().clone(),
                             font_size: 40.0,

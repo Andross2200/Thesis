@@ -3,6 +3,7 @@
       "tutorial_button": "Обучение",
       "challenge_button": "Вызов",
       "multiplayer_button": "Мультиплеер",
+      "scoreboard_button": "Доска почета",
       "language_panel": "Язык:",
       "player_panel": "Игрок:",
       "create_new_player_button": "Новый игрок",
@@ -45,5 +46,10 @@
       "complete_button": "Завершить",
       "go_back_button": "Назад",
       "perls_score_label": "Жемчуг"
+    },
+    "scoreboard": {
+      "title": "Доска почета",
+      "challenge_scores_title": "Режим \"Вызов\"",
+      "go_back_button": "Назад"
     }
   }

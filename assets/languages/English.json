@@ -3,6 +3,7 @@
     "tutorial_button": "Tutorial",
     "challenge_button": "Challenge",
     "multiplayer_button": "Multiplayer",
+    "scoreboard_button": "Scoreboard",
     "language_panel": "Language:",
     "player_panel": "Player:",
     "create_new_player_button": "Create New Player",
@@ -45,5 +46,10 @@
     "complete_button": "Complete",
     "go_back_button": "Go Back",
     "perls_score_label": "Perl"
+  },
+  "scoreboard": {
+    "title": "Scoreboard",
+    "challenge_scores_title": "Challenge mode",
+    "go_back_button": "Go Back"
   }
 }
