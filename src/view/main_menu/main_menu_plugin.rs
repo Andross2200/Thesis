@@ -451,7 +451,9 @@ fn menu_actions(
                         *script_res = ScriptRes::new();
                         game_state.set(GameState::Game).unwrap();
                     }
-                    MenuButtonAction::Multiplayer => {}
+                    MenuButtonAction::Multiplayer => {
+                        game_state.set(GameState::Multiplayer).unwrap();
+                    }
                     MenuButtonAction::Scoreboard => {
                         game_state.set(GameState::Scoreboard).unwrap();
                     }
