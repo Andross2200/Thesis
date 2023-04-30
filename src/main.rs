@@ -8,6 +8,7 @@ mod view;
 
 use utilities::database_plugin::DatabasePlugin;
 use utilities::language_plugin::LanguagePlugin;
+use utilities::network_plugin::NetworkPlugin;
 use view::game_view::game_view_plugin::GameViewPlugin;
 use view::image_handler::ImageHandlerPlugin;
 use view::level_selector_view::level_selector_plugin::LevelSelectorPlugin;
@@ -44,6 +45,7 @@ fn main() {
         .add_plugin(MainMenuPlugin)
         .add_plugin(ScoreboardPlugin)
         .add_plugin(MultiplayerViewPlugin)
+        .add_plugin(NetworkPlugin)
         .run();
 }
 
