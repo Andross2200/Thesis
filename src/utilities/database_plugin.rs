@@ -42,6 +42,7 @@ impl Default for ConfigResource {
 pub struct FenPrefab {
     pub prefab_id: i32,
     pub fen: String,
+    pub level_name: String
 }
 
 #[derive(Debug, PartialEq, Eq, Default)]
@@ -183,14 +184,15 @@ pub fn update_score_for_tutorial_level(
         .expect("Transaction for getting all levels must be commited");
 }
 
-pub fn get_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> (i32, String) {
+pub fn get_random_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> (i32, String) {
     let prefabs = db_conn
         .conn
         .query_map(
-            "SELECT id, fen FROM challenge_prefabs",
-            |(id, fen_prefab)| FenPrefab {
+            "SELECT id, fen, level_name FROM challenge_prefabs",
+            |(id, fen_prefab, level_name)| FenPrefab {
                 prefab_id: id,
                 fen: fen_prefab,
+                level_name
             },
         )
         .expect("Query must be successful");
@@ -378,4 +380,80 @@ pub fn get_best_ten_challenge_scores_for_player(
     } else {
         all_player_scores.to_vec()
     }
+}
+
+pub fn get_challenge_fen_at_ind(db_conn: &mut ResMut<DatabaseConnection>, ind: i32) -> (i32, String, String) {
+    let mut transaction = db_conn
+        .conn
+        .start_transaction(TxOpts::default())
+        .expect("New transaction must be started");
+    let prefabs = transaction.query_map(
+            "SELECT id, fen, level_name FROM challenge_prefabs",
+            |(id, fen_prefab, level_name)| FenPrefab {
+                prefab_id: id,
+                fen: fen_prefab,
+                level_name
+            },
+        )
+        .expect("Query must be successful");
+    transaction
+        .commit()
+        .expect("Transaction should be committed");
+    (
+        prefabs.get(ind as usize).unwrap().prefab_id,
+        make_fen_from_prefab(prefabs.get(ind as usize).unwrap().fen.clone()),
+        prefabs.get(ind as usize).unwrap().level_name.clone()
+    )
+}
+
+pub fn get_next_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>, ind: i32) -> (i32, i32, String, String) {
+    let mut transaction = db_conn
+        .conn
+        .start_transaction(TxOpts::default())
+        .expect("New transaction must be started");
+    let prefabs = transaction.query_map(
+            "SELECT id, fen, level_name FROM challenge_prefabs",
+            |(id, fen_prefab, level_name)| FenPrefab {
+                prefab_id: id,
+                fen: fen_prefab,
+                level_name
+            },
+        )
+        .expect("Query must be successful");
+    transaction
+        .commit()
+        .expect("Transaction should be committed");
+    let next_ind = if ind + 1 >= prefabs.len() as i32 { 0 } else { ind + 1 };
+    (
+        next_ind,
+        prefabs.get(ind as usize).unwrap().prefab_id,
+        make_fen_from_prefab(prefabs.get(ind as usize).unwrap().fen.clone()),
+        prefabs.get(ind as usize).unwrap().level_name.clone()
+    )
+}
+
+pub fn get_prev_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>, ind: i32) -> (i32, i32, String, String) {
+    let mut transaction = db_conn
+        .conn
+        .start_transaction(TxOpts::default())
+        .expect("New transaction must be started");
+    let prefabs = transaction.query_map(
+            "SELECT id, fen, level_name FROM challenge_prefabs",
+            |(id, fen_prefab, level_name)| FenPrefab {
+                prefab_id: id,
+                fen: fen_prefab,
+                level_name
+            },
+        )
+        .expect("Query must be successful");
+    transaction
+        .commit()
+        .expect("Transaction should be committed");
+    let prev_ind = if ind == 0 { prefabs.len() as i32 - 1 } else { ind - 1 };
+    (
+        prev_ind,
+        prefabs.get(ind as usize).unwrap().prefab_id,
+        make_fen_from_prefab(prefabs.get(ind as usize).unwrap().fen.clone()),
+        prefabs.get(ind as usize).unwrap().level_name.clone()
+    )
 }

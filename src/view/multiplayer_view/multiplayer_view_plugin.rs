@@ -1,8 +1,10 @@
+use std::borrow::BorrowMut;
+
 use bevy::{
     ecs::schedule::ShouldRun,
     prelude::{
         BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component, NodeBundle,
-        Plugin, Query, Res, ResMut, State, SystemSet, TextBundle, With, Without,
+        Plugin, Query, Res, ResMut, State, SystemSet, TextBundle, With, Without, EventWriter,
     },
     text::{Text, TextStyle},
     ui::{
@@ -18,9 +20,12 @@ use bevy_quinnet::{
 };
 
 use crate::{
-    utilities::network_plugin::{ConnectionStatus, ConnectionType, NetworkResource},
+    utilities::{network_plugin::{ConnectionStatus, ConnectionType, NetworkResource, SendLevelDataToClient, SelectedLevelData}, database_plugin::{DatabaseConnection, get_challenge_fen_at_ind, get_next_challenge_fen, get_prev_challenge_fen}},
     view::{despawn_screen, image_handler::ImageMap, GameState},
 };
+
+#[derive(Debug, Component)]
+struct LevelNameText;
 
 #[derive(Debug, Component)]
 struct LevelPanel;
@@ -81,7 +86,8 @@ impl Plugin for MultiplayerViewPlugin {
                 SystemSet::new()
                     .with_run_criteria(cond_connect_to_server)
                     .with_system(connect_to_server),
-            );
+            )
+            .add_system_set(SystemSet::new().with_run_criteria(cond_to_redraw_level_name).with_system(redraw_level_name));
     }
 }
 
@@ -343,7 +349,7 @@ fn init_view(
                                     margin: UiRect::all(Val::Px(5.0)),
                                     ..Default::default()
                                 }),
-                            );
+                            ).insert(LevelNameText);
                             node.spawn(ButtonBundle {
                                 style: Style {
                                     size: Size::new(Val::Px(50.0), Val::Px(50.0)),
@@ -699,11 +705,27 @@ fn cond_to_connect_to_client(network_res: Res<NetworkResource>) -> ShouldRun {
     }
 }
 
+fn cond_to_redraw_level_name(network_res: Res<NetworkResource>) -> ShouldRun {
+    if network_res.connection_status != ConnectionStatus::None && network_res.connection_status != ConnectionStatus::Waiting {
+        ShouldRun::Yes
+    } else {
+        ShouldRun::No
+    }
+}
+
+fn redraw_level_name(mut level_name_text: Query<&mut Text,( With<LevelNameText>, Without<ConnectionStatusPanel>)>, network_res: Res<NetworkResource>) {
+    for mut text in &mut level_name_text {
+        text.sections[0].value = network_res.level_selection_data.level_name.clone();
+    }
+}
+
 fn connect_to_client(
     mut server: ResMut<Server>,
-    mut status_text: Query<&mut Text, (With<ConnectionStatusPanel>, Without<NetworkOption>)>,
+    mut status_text: Query<&mut Text, (With<ConnectionStatusPanel>, Without<NetworkOption>, Without<LevelNameText>)>,
     mut network_res: ResMut<NetworkResource>,
     mut level_selection_panel: Query<&mut Style, With<LevelPanel>>,
+    mut db_conn: ResMut<DatabaseConnection>,
+    mut event_sender: EventWriter<SendLevelDataToClient>
 ) {
     let endpoint = server.endpoint_mut();
     if endpoint.clients().len() == 1 {
@@ -720,6 +742,13 @@ fn connect_to_client(
         for mut style in &mut level_selection_panel {
             style.display = Display::Flex;
         }
+        let (id, fen, level_name) = get_challenge_fen_at_ind(db_conn.borrow_mut(), 0);
+        network_res.level_selection_data.selected_level_id = 0;
+        network_res.level_selection_data.fen = fen;
+        network_res.level_selection_data.level_id = id;
+        network_res.level_selection_data.level_name = level_name;
+        let event = SendLevelDataToClient::default();
+        event_sender.send(event);
     } else if endpoint.clients().len() > 1 {
         let saved_client =
             if let ConnectionStatus::Connected { client_id } = network_res.connection_status {
@@ -749,18 +778,14 @@ fn cond_connect_to_server(network_res: Res<NetworkResource>) -> ShouldRun {
 
 fn connect_to_server(
     client: Res<Client>,
-    mut status_text: Query<&mut Text, (With<ConnectionStatusPanel>, Without<NetworkOption>)>,
-    mut network_res: ResMut<NetworkResource>,
-    mut level_selection_panel: Query<&mut Style, With<LevelPanel>>,
+    mut status_text: Query<&mut Text, (With<ConnectionStatusPanel>, Without<NetworkOption>, Without<LevelNameText>)>,
+    mut network_res: ResMut<NetworkResource>
 ) {
     if client.get_connection().is_some() {
         network_res.connection_status = ConnectionStatus::Connected { client_id: 0 };
         for mut text in &mut status_text {
             text.sections[0].value = "Connected".to_string();
             text.sections[0].style.color = Color::GREEN;
-        }
-        for mut style in &mut level_selection_panel {
-            style.display = Display::Flex;
         }
     }
 }
@@ -770,15 +795,28 @@ fn choose_level(
         (&Interaction, &SwitchLevel, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>, With<SwitchLevel>),
     >,
+    mut network_res: ResMut<NetworkResource>,
+    mut db_conn: ResMut<DatabaseConnection>,
+    mut event_sender: EventWriter<SendLevelDataToClient>
 ) {
     for (interaction, action_type, mut back_color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
+                let new_level_selection: SelectedLevelData;
                 match *action_type {
-                    SwitchLevel::Back => {}
-                    SwitchLevel::Forward => {}
-                }
+                    SwitchLevel::Back => {
+                        let (ind, id, fen, name) = get_prev_challenge_fen(db_conn.borrow_mut(), network_res.level_selection_data.selected_level_id);
+                        new_level_selection = SelectedLevelData {selected_level_id: ind, level_id: id, fen: fen, level_name: name};
+                    }
+                    SwitchLevel::Forward => {
+                        let (ind, id, fen, name) = get_next_challenge_fen(db_conn.borrow_mut(), network_res.level_selection_data.selected_level_id);
+                        new_level_selection = SelectedLevelData {selected_level_id: ind, level_id: id, fen: fen, level_name: name};
+                    }
+                };
+                network_res.level_selection_data = new_level_selection;
+                let event = SendLevelDataToClient::default();
+                event_sender.send(event);
             }
             Interaction::Hovered => {
                 *back_color = BackgroundColor(Color::AQUAMARINE);
