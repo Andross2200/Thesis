@@ -20,8 +20,8 @@ use bevy_quinnet::{
 };
 
 use crate::{
-    utilities::{network_plugin::{ConnectionStatus, ConnectionType, NetworkResource, SendLevelDataToClient, SelectedLevelData}, database_plugin::{DatabaseConnection, get_challenge_fen_at_ind, get_next_challenge_fen, get_prev_challenge_fen}},
-    view::{despawn_screen, image_handler::ImageMap, GameState},
+    utilities::{network_plugin::{ConnectionStatus, ConnectionType, NetworkResource, SelectedLevelData, SendLevelDataToClient, SendStartSignalToClient}, database_plugin::{DatabaseConnection, get_challenge_fen_at_ind, get_next_challenge_fen, get_prev_challenge_fen}, script_plugin::ScriptRes},
+    view::{despawn_screen, image_handler::ImageMap, GameState}, model::game_model::game::{Game, GameMode},
 };
 
 #[derive(Debug, Component)]
@@ -671,7 +671,7 @@ fn choose_network_option(
                                     network_res.ip.to_string(),
                                     network_res.ports[network_res.selected_port_ind as usize],
                                     "0.0.0.0".to_string(),
-                                    0,
+                                    249,
                                 ),
                                 CertificateVerificationMode::SkipVerification,
                             )
@@ -833,11 +833,21 @@ fn start_game(
         (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>, With<StartLevel>),
     >,
+    network_res: Res<NetworkResource>,
+    mut game: ResMut<Game>,
+    mut script_res: ResMut<ScriptRes>,
+    mut game_state: ResMut<State<GameState>>,
+    mut event_sender: EventWriter<SendStartSignalToClient>
 ) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
+                *game =
+                    Game::init_from_fen(network_res.level_selection_data.fen.clone(), network_res.level_selection_data.level_id, GameMode::Multiplayer);
+                *script_res = ScriptRes::new();
+                game_state.set(GameState::Game).unwrap();
+                event_sender.send(SendStartSignalToClient::default());
             }
             Interaction::Hovered => {
                 *back_color = BackgroundColor(Color::AQUAMARINE);
