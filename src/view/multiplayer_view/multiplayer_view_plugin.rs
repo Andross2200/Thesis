@@ -27,8 +27,8 @@ use crate::{
             DatabaseConnection,
         },
         network_plugin::{
-            ConnectionStatus, ConnectionType, NetworkResource, SelectedLevelData,
-            SendLevelDataToClient, SendStartSignalToClient, GameStage,
+            ConnectionStatus, ConnectionType, GameStage, NetworkResource, SelectedLevelData,
+            SendLevelDataToClient, SendStartSignalToClient,
         },
         script_plugin::ScriptRes,
     },
@@ -109,7 +109,11 @@ impl Plugin for MultiplayerViewPlugin {
                     .with_run_criteria(cond_to_redraw_level_name)
                     .with_system(redraw_level_name),
             )
-            .add_system_set(SystemSet::new().with_run_criteria(cond_to_update_score_view).with_system(update_score_view));
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(cond_to_update_score_view)
+                    .with_system(update_score_view),
+            );
     }
 }
 
@@ -296,11 +300,11 @@ fn init_view(
                     parent
                         .spawn(
                             TextBundle::from_section(
-                                "",
+                                if let ConnectionStatus::Connected { client_id: _ } = network_res.connection_status {"Connected"} else {""},
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 40.0,
-                                    color: Color::GREEN,
+                                    color: if let ConnectionStatus::Connected { client_id: _ } = network_res.connection_status {Color::GREEN} else {Color::BLACK},
                                 },
                             )
                             .with_style(Style {
@@ -324,7 +328,14 @@ fn init_view(
                         flex_direction: FlexDirection::Row,
                         align_items: AlignItems::FlexStart,
                         margin: UiRect::bottom(Val::Px(10.0)),
-                        display: Display::None,
+                        display: if let ConnectionStatus::Connected { client_id: _ } =
+                            network_res.connection_status
+                        {
+                            if network_res.connection_type == ConnectionType::Server {Display::Flex} else {Display::None}
+
+                        } else {
+                            Display::None
+                        },
                         ..Default::default()
                     },
                     background_color: BackgroundColor(Color::WHITE),
@@ -436,6 +447,7 @@ fn init_view(
                         bottom: Val::Px(30.0),
                         ..Default::default()
                     },
+                    display: if network_res.game_stage == GameStage::End { Display::Flex} else {Display::None},
                     ..Default::default()
                 }),
             );
@@ -447,6 +459,7 @@ fn init_view(
                         margin: UiRect::top(Val::Px(10.0)),
                         flex_direction: FlexDirection::Row,
                         justify_content: JustifyContent::SpaceAround,
+                        display: if network_res.game_stage == GameStage::End { Display::Flex} else {Display::None},
                         ..Default::default()
                     },
                     ..Default::default()
@@ -939,7 +952,10 @@ fn update_score_view(
 ) {
     if network_res.my_game_score.completed {
         for mut text in &mut my_score_text {
-            text.sections[0].value = format!("Number of steps: {}", network_res.my_game_score.num_of_steps);
+            text.sections[0].value = format!(
+                "Number of steps: {}",
+                network_res.my_game_score.num_of_steps
+            );
         }
     } else {
         for mut text in &mut my_score_text {
@@ -948,7 +964,10 @@ fn update_score_view(
     }
     if network_res.opponent_game_score.completed {
         for mut text in &mut opponent_score_text {
-            text.sections[0].value = format!("Number of steps: {}", network_res.opponent_game_score.num_of_steps);
+            text.sections[0].value = format!(
+                "Number of steps: {}",
+                network_res.opponent_game_score.num_of_steps
+            );
         }
     } else {
         for mut text in &mut opponent_score_text {
