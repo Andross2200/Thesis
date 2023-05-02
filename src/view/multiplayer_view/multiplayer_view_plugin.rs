@@ -833,7 +833,7 @@ fn start_game(
         (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>, With<StartLevel>),
     >,
-    network_res: Res<NetworkResource>,
+    mut network_res: ResMut<NetworkResource>,
     mut game: ResMut<Game>,
     mut script_res: ResMut<ScriptRes>,
     mut game_state: ResMut<State<GameState>>,
@@ -848,6 +848,8 @@ fn start_game(
                 *script_res = ScriptRes::new();
                 game_state.set(GameState::Game).unwrap();
                 event_sender.send(SendStartSignalToClient::default());
+                network_res.my_game_score.reset();
+                network_res.opponent_game_score.reset();
             }
             Interaction::Hovered => {
                 *back_color = BackgroundColor(Color::AQUAMARINE);

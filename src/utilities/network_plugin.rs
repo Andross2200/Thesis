@@ -61,6 +61,36 @@ pub enum ConnectionType {
     None,
 }
 
+#[derive(Debug)]
+pub struct GameScore {
+    pub completed: bool,
+    num_of_steps: i32
+}
+
+impl Default for GameScore {
+    fn default() -> Self {
+        GameScore { completed: false, num_of_steps: -1 }
+    }
+}
+
+impl GameScore {
+    pub fn complete(&mut self, steps: i32) {
+        self.completed = true;
+        self.num_of_steps = steps;
+    }
+
+    pub fn reset(&mut self) {
+        self.completed = false;
+        self.num_of_steps = -1;
+    }
+}
+
+#[derive(Debug)]
+pub enum GameStage {
+    Start,
+    End
+}
+
 #[derive(Debug, Resource)]
 pub struct NetworkResource {
     pub ip: IpAddr,
@@ -69,6 +99,9 @@ pub struct NetworkResource {
     pub connection_type: ConnectionType,
     pub connection_status: ConnectionStatus,
     pub level_selection_data: SelectedLevelData,
+    pub my_game_score: GameScore,
+    pub opponent_game_score: GameScore,
+    pub game_stage: GameStage
 }
 
 impl Default for NetworkResource {
@@ -82,6 +115,9 @@ impl Default for NetworkResource {
             connection_type: ConnectionType::None,
             connection_status: ConnectionStatus::None,
             level_selection_data: SelectedLevelData::default(),
+            my_game_score: GameScore::default(),
+            opponent_game_score: GameScore::default(),
+            game_stage: GameStage::Start
         }
     }
 }
