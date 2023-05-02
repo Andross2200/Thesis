@@ -20,7 +20,7 @@ use crate::{
             ConfigResource, DatabaseConnection,
         },
         language_plugin::LanguageResource,
-        network_plugin::{GameStage, NetworkResource},
+        network_plugin::{GameStage, NetworkResource, SendScoreToClient, ConnectionType, SendScoreToServer},
         script_plugin::{reset_level, ScriptRes},
     },
     view::{image_handler::ImageMap, GameState},
@@ -378,7 +378,7 @@ fn cond_complete_game_button(game: Res<Game>) -> ShouldRun {
     if game.game_completed == GameCompleted::Yes {
         ShouldRun::Yes
     } else {
-        ShouldRun::Yes
+        ShouldRun::No
     }
 }
 
@@ -396,6 +396,7 @@ fn complete_game_button(
     mut game_state: ResMut<State<GameState>>,
     config: Res<ConfigResource>,
     mut network_res: ResMut<NetworkResource>,
+    mut event_sender: EventWriter<SendScoreToClient>,
 ) {
     for (interaction, mut color) in &mut interaction_query {
         match *interaction {
@@ -442,6 +443,7 @@ fn complete_game_button(
                         game.solution,
                         game.level_id,
                     );
+                    event_sender.send(SendScoreToClient::default());
                     game_state.set(GameState::Multiplayer).unwrap();
                 }
             }
@@ -463,6 +465,8 @@ fn no_save_exit(
     mut game_state: ResMut<State<GameState>>,
     game: Res<Game>,
     mut network_res: ResMut<NetworkResource>,
+    mut event_sender_to_client: EventWriter<SendScoreToClient>,
+    mut event_sender_to_server: EventWriter<SendScoreToServer>
 ) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {
@@ -477,6 +481,11 @@ fn no_save_exit(
                 if game.game_mode == GameMode::Multiplayer {
                     network_res.my_game_score.complete(0);
                     network_res.game_stage = GameStage::End;
+                    if network_res.connection_type == ConnectionType::Server {
+                        event_sender_to_client.send(SendScoreToClient::default());
+                    } else {
+                        event_sender_to_server.send(SendScoreToServer::default());
+                    }
                     game_state.set(GameState::Multiplayer).unwrap();
                 }
             }

@@ -3,8 +3,8 @@ use std::borrow::BorrowMut;
 use bevy::{
     ecs::schedule::ShouldRun,
     prelude::{
-        BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component, NodeBundle,
-        Plugin, Query, Res, ResMut, State, SystemSet, TextBundle, With, Without, EventWriter,
+        BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component, EventWriter,
+        NodeBundle, Plugin, Query, Res, ResMut, State, SystemSet, TextBundle, With, Without,
     },
     text::{Text, TextStyle},
     ui::{
@@ -20,9 +20,26 @@ use bevy_quinnet::{
 };
 
 use crate::{
-    utilities::{network_plugin::{ConnectionStatus, ConnectionType, NetworkResource, SelectedLevelData, SendLevelDataToClient, SendStartSignalToClient}, database_plugin::{DatabaseConnection, get_challenge_fen_at_ind, get_next_challenge_fen, get_prev_challenge_fen}, script_plugin::ScriptRes},
-    view::{despawn_screen, image_handler::ImageMap, GameState}, model::game_model::game::{Game, GameMode},
+    model::game_model::game::{Game, GameMode},
+    utilities::{
+        database_plugin::{
+            get_challenge_fen_at_ind, get_next_challenge_fen, get_prev_challenge_fen,
+            DatabaseConnection,
+        },
+        network_plugin::{
+            ConnectionStatus, ConnectionType, NetworkResource, SelectedLevelData,
+            SendLevelDataToClient, SendStartSignalToClient, GameStage,
+        },
+        script_plugin::ScriptRes,
+    },
+    view::{despawn_screen, image_handler::ImageMap, GameState},
 };
+
+#[derive(Debug, Component)]
+struct MyScoreText;
+
+#[derive(Debug, Component)]
+struct OpponentScoreText;
 
 #[derive(Debug, Component)]
 struct LevelNameText;
@@ -87,7 +104,12 @@ impl Plugin for MultiplayerViewPlugin {
                     .with_run_criteria(cond_connect_to_server)
                     .with_system(connect_to_server),
             )
-            .add_system_set(SystemSet::new().with_run_criteria(cond_to_redraw_level_name).with_system(redraw_level_name));
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(cond_to_redraw_level_name)
+                    .with_system(redraw_level_name),
+            )
+            .add_system_set(SystemSet::new().with_run_criteria(cond_to_update_score_view).with_system(update_score_view));
     }
 }
 
@@ -349,7 +371,8 @@ fn init_view(
                                     margin: UiRect::all(Val::Px(5.0)),
                                     ..Default::default()
                                 }),
-                            ).insert(LevelNameText);
+                            )
+                            .insert(LevelNameText);
                             node.spawn(ButtonBundle {
                                 style: Style {
                                     size: Size::new(Val::Px(50.0), Val::Px(50.0)),
@@ -476,7 +499,8 @@ fn init_view(
                                 },
                                 ..Default::default()
                             }),
-                        );
+                        )
+                        .insert(MyScoreText);
                     });
 
                     // Opponent score
@@ -526,7 +550,8 @@ fn init_view(
                                 },
                                 ..Default::default()
                             }),
-                        );
+                        )
+                        .insert(OpponentScoreText);
                     });
                 });
         });
@@ -706,14 +731,19 @@ fn cond_to_connect_to_client(network_res: Res<NetworkResource>) -> ShouldRun {
 }
 
 fn cond_to_redraw_level_name(network_res: Res<NetworkResource>) -> ShouldRun {
-    if network_res.connection_status != ConnectionStatus::None && network_res.connection_status != ConnectionStatus::Waiting {
+    if network_res.connection_status != ConnectionStatus::None
+        && network_res.connection_status != ConnectionStatus::Waiting
+    {
         ShouldRun::Yes
     } else {
         ShouldRun::No
     }
 }
 
-fn redraw_level_name(mut level_name_text: Query<&mut Text,( With<LevelNameText>, Without<ConnectionStatusPanel>)>, network_res: Res<NetworkResource>) {
+fn redraw_level_name(
+    mut level_name_text: Query<&mut Text, (With<LevelNameText>, Without<ConnectionStatusPanel>)>,
+    network_res: Res<NetworkResource>,
+) {
     for mut text in &mut level_name_text {
         text.sections[0].value = network_res.level_selection_data.level_name.clone();
     }
@@ -721,11 +751,18 @@ fn redraw_level_name(mut level_name_text: Query<&mut Text,( With<LevelNameText>,
 
 fn connect_to_client(
     mut server: ResMut<Server>,
-    mut status_text: Query<&mut Text, (With<ConnectionStatusPanel>, Without<NetworkOption>, Without<LevelNameText>)>,
+    mut status_text: Query<
+        &mut Text,
+        (
+            With<ConnectionStatusPanel>,
+            Without<NetworkOption>,
+            Without<LevelNameText>,
+        ),
+    >,
     mut network_res: ResMut<NetworkResource>,
     mut level_selection_panel: Query<&mut Style, With<LevelPanel>>,
     mut db_conn: ResMut<DatabaseConnection>,
-    mut event_sender: EventWriter<SendLevelDataToClient>
+    mut event_sender: EventWriter<SendLevelDataToClient>,
 ) {
     let endpoint = server.endpoint_mut();
     if endpoint.clients().len() == 1 {
@@ -778,8 +815,15 @@ fn cond_connect_to_server(network_res: Res<NetworkResource>) -> ShouldRun {
 
 fn connect_to_server(
     client: Res<Client>,
-    mut status_text: Query<&mut Text, (With<ConnectionStatusPanel>, Without<NetworkOption>, Without<LevelNameText>)>,
-    mut network_res: ResMut<NetworkResource>
+    mut status_text: Query<
+        &mut Text,
+        (
+            With<ConnectionStatusPanel>,
+            Without<NetworkOption>,
+            Without<LevelNameText>,
+        ),
+    >,
+    mut network_res: ResMut<NetworkResource>,
 ) {
     if client.get_connection().is_some() {
         network_res.connection_status = ConnectionStatus::Connected { client_id: 0 };
@@ -797,7 +841,7 @@ fn choose_level(
     >,
     mut network_res: ResMut<NetworkResource>,
     mut db_conn: ResMut<DatabaseConnection>,
-    mut event_sender: EventWriter<SendLevelDataToClient>
+    mut event_sender: EventWriter<SendLevelDataToClient>,
 ) {
     for (interaction, action_type, mut back_color) in &mut interaction_query {
         match *interaction {
@@ -806,12 +850,28 @@ fn choose_level(
                 let new_level_selection: SelectedLevelData;
                 match *action_type {
                     SwitchLevel::Back => {
-                        let (ind, id, fen, name) = get_prev_challenge_fen(db_conn.borrow_mut(), network_res.level_selection_data.selected_level_id);
-                        new_level_selection = SelectedLevelData {selected_level_id: ind, level_id: id, fen: fen, level_name: name};
+                        let (ind, id, fen, name) = get_prev_challenge_fen(
+                            db_conn.borrow_mut(),
+                            network_res.level_selection_data.selected_level_id,
+                        );
+                        new_level_selection = SelectedLevelData {
+                            selected_level_id: ind,
+                            level_id: id,
+                            fen: fen,
+                            level_name: name,
+                        };
                     }
                     SwitchLevel::Forward => {
-                        let (ind, id, fen, name) = get_next_challenge_fen(db_conn.borrow_mut(), network_res.level_selection_data.selected_level_id);
-                        new_level_selection = SelectedLevelData {selected_level_id: ind, level_id: id, fen: fen, level_name: name};
+                        let (ind, id, fen, name) = get_next_challenge_fen(
+                            db_conn.borrow_mut(),
+                            network_res.level_selection_data.selected_level_id,
+                        );
+                        new_level_selection = SelectedLevelData {
+                            selected_level_id: ind,
+                            level_id: id,
+                            fen: fen,
+                            level_name: name,
+                        };
                     }
                 };
                 network_res.level_selection_data = new_level_selection;
@@ -837,14 +897,17 @@ fn start_game(
     mut game: ResMut<Game>,
     mut script_res: ResMut<ScriptRes>,
     mut game_state: ResMut<State<GameState>>,
-    mut event_sender: EventWriter<SendStartSignalToClient>
+    mut event_sender: EventWriter<SendStartSignalToClient>,
 ) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
-                *game =
-                    Game::init_from_fen(network_res.level_selection_data.fen.clone(), network_res.level_selection_data.level_id, GameMode::Multiplayer);
+                *game = Game::init_from_fen(
+                    network_res.level_selection_data.fen.clone(),
+                    network_res.level_selection_data.level_id,
+                    GameMode::Multiplayer,
+                );
                 *script_res = ScriptRes::new();
                 game_state.set(GameState::Game).unwrap();
                 event_sender.send(SendStartSignalToClient::default());
@@ -857,6 +920,39 @@ fn start_game(
             Interaction::None => {
                 *back_color = BackgroundColor(Color::BEIGE);
             }
+        }
+    }
+}
+
+fn cond_to_update_score_view(network_res: Res<NetworkResource>) -> ShouldRun {
+    if network_res.game_stage == GameStage::End {
+        ShouldRun::Yes
+    } else {
+        ShouldRun::No
+    }
+}
+
+fn update_score_view(
+    network_res: Res<NetworkResource>,
+    mut my_score_text: Query<&mut Text, (With<MyScoreText>, Without<OpponentScoreText>)>,
+    mut opponent_score_text: Query<&mut Text, (With<OpponentScoreText>, Without<MyScoreText>)>,
+) {
+    if network_res.my_game_score.completed {
+        for mut text in &mut my_score_text {
+            text.sections[0].value = format!("Number of steps: {}", network_res.my_game_score.num_of_steps);
+        }
+    } else {
+        for mut text in &mut my_score_text {
+            text.sections[0].value = "Number of steps: N/A".to_string();
+        }
+    }
+    if network_res.opponent_game_score.completed {
+        for mut text in &mut opponent_score_text {
+            text.sections[0].value = format!("Number of steps: {}", network_res.opponent_game_score.num_of_steps);
+        }
+    } else {
+        for mut text in &mut opponent_score_text {
+            text.sections[0].value = "Number of steps: N/A".to_string();
         }
     }
 }

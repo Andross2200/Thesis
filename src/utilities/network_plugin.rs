@@ -18,12 +18,16 @@ use crate::{
 use super::script_plugin::ScriptRes;
 
 #[derive(Debug, Default)]
+pub struct SendScoreToClient;
+
+#[derive(Debug, Default)]
+pub struct SendScoreToServer;
+
+#[derive(Debug, Default)]
 pub struct SendLevelDataToClient;
 
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct StartGame {
-    data: u8,
-}
+#[derive(Debug, Default)]
+pub struct StartGame;
 
 #[derive(Debug, Default)]
 pub struct SendStartSignalToClient;
@@ -37,6 +41,9 @@ enum ServerMessage {
         name: String,
     },
     StartGame,
+    ScoreResult {
+        num_of_steps: i32,
+    },
 }
 
 #[derive(Debug, Default)]
@@ -64,12 +71,15 @@ pub enum ConnectionType {
 #[derive(Debug)]
 pub struct GameScore {
     pub completed: bool,
-    num_of_steps: i32
+    pub num_of_steps: i32,
 }
 
 impl Default for GameScore {
     fn default() -> Self {
-        GameScore { completed: false, num_of_steps: -1 }
+        GameScore {
+            completed: false,
+            num_of_steps: -1,
+        }
     }
 }
 
@@ -85,10 +95,10 @@ impl GameScore {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum GameStage {
     Start,
-    End
+    End,
 }
 
 #[derive(Debug, Resource)]
@@ -101,7 +111,7 @@ pub struct NetworkResource {
     pub level_selection_data: SelectedLevelData,
     pub my_game_score: GameScore,
     pub opponent_game_score: GameScore,
-    pub game_stage: GameStage
+    pub game_stage: GameStage,
 }
 
 impl Default for NetworkResource {
@@ -117,7 +127,7 @@ impl Default for NetworkResource {
             level_selection_data: SelectedLevelData::default(),
             my_game_score: GameScore::default(),
             opponent_game_score: GameScore::default(),
-            game_stage: GameStage::Start
+            game_stage: GameStage::Start,
         }
     }
 }
@@ -131,6 +141,8 @@ impl Plugin for NetworkPlugin {
             .add_plugin(QuinnetClientPlugin::default())
             .add_event::<SendLevelDataToClient>()
             .add_event::<SendStartSignalToClient>()
+            .add_event::<SendScoreToClient>()
+            .add_event::<SendScoreToServer>()
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(cond_to_send_level_data_to_client)
@@ -150,6 +162,21 @@ impl Plugin for NetworkPlugin {
                 SystemSet::new()
                     .with_run_criteria(cond_to_send_start_game_signal)
                     .with_system(send_start_game_signal),
+            )
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(cond_send_score_to_client)
+                    .with_system(send_host_score_to_client),
+            )
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(cond_send_score_to_server)
+                    .with_system(send_score_to_server),
+            )
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(cond_to_receive_message_from_client)
+                    .with_system(receive_message_from_client),
             );
     }
 }
@@ -169,6 +196,60 @@ fn send_level_data_to_client(network_res: Res<NetworkResource>, mut server: ResM
             panic!()
         };
     info!("Message sent: {:?}", message);
+    endpoint
+        .send_message(saved_client, message)
+        .expect("The sending of message should be successful");
+}
+
+fn cond_send_score_to_server(
+    network_res: Res<NetworkResource>,
+    mut event_reader: EventReader<SendScoreToServer>,
+) -> ShouldRun {
+    if network_res.connection_type == ConnectionType::Client {
+        for _ in event_reader.iter() {
+            return ShouldRun::Yes;
+        }
+        ShouldRun::No
+    } else {
+        ShouldRun::No
+    }
+}
+
+fn send_score_to_server(network_res: Res<NetworkResource>, mut client: ResMut<Client>) {
+    let message = ServerMessage::ScoreResult {
+        num_of_steps: network_res.my_game_score.num_of_steps,
+    };
+    client
+        .connection_mut()
+        .send_message(message)
+        .expect("The sending of message should be successful");
+}
+
+fn cond_send_score_to_client(
+    network_res: Res<NetworkResource>,
+    mut event_reader: EventReader<SendScoreToClient>,
+) -> ShouldRun {
+    if network_res.connection_type == ConnectionType::Server {
+        for _ in event_reader.iter() {
+            return ShouldRun::Yes;
+        }
+        ShouldRun::No
+    } else {
+        ShouldRun::No
+    }
+}
+
+fn send_host_score_to_client(network_res: Res<NetworkResource>, mut server: ResMut<Server>) {
+    let endpoint = server.endpoint_mut();
+    let message = ServerMessage::ScoreResult {
+        num_of_steps: network_res.my_game_score.num_of_steps,
+    };
+    let saved_client =
+        if let ConnectionStatus::Connected { client_id } = network_res.connection_status {
+            client_id
+        } else {
+            panic!()
+        };
     endpoint
         .send_message(saved_client, message)
         .expect("The sending of message should be successful");
@@ -200,6 +281,9 @@ fn receive_level_data_from_server(
                 );
                 *script_res = ScriptRes::new();
                 game_state.set(GameState::Game).unwrap();
+            }
+            ServerMessage::ScoreResult { num_of_steps } => {
+                network_res.opponent_game_score.complete(num_of_steps);
             }
         }
     }
@@ -255,4 +339,35 @@ fn send_start_game_signal(mut server: ResMut<Server>, network_res: Res<NetworkRe
         .send_message(saved_client, message)
         .expect("The sending of message should be successful");
     info!("Signal Sent");
+}
+
+fn cond_to_receive_message_from_client(network_res: Res<NetworkResource>) -> ShouldRun {
+    if network_res.connection_type == ConnectionType::Server {
+        ShouldRun::Yes
+    } else {
+        ShouldRun::No
+    }
+}
+
+fn receive_message_from_client(
+    mut network_res: ResMut<NetworkResource>,
+    mut server: ResMut<Server>,
+) {
+    if let ConnectionStatus::Connected { client_id } = network_res.connection_status {
+        let endpoint = server.endpoint_mut();
+        if let Some(message) = endpoint.try_receive_message_from::<ServerMessage>(client_id) {
+            match message {
+                ServerMessage::LevelData {
+                    ind: _,
+                    id: _,
+                    fen: _,
+                    name: _,
+                } => {}
+                ServerMessage::StartGame => {}
+                ServerMessage::ScoreResult { num_of_steps } => {
+                    network_res.opponent_game_score.complete(num_of_steps);
+                }
+            }
+        }
+    };
 }
