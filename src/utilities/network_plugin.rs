@@ -1,4 +1,4 @@
-use std::net::{IpAddr, Ipv4Addr};
+use std::{net::{IpAddr, Ipv4Addr}, time::Duration, thread::sleep};
 
 use bevy::{
     ecs::schedule::ShouldRun,
@@ -44,6 +44,7 @@ enum ServerMessage {
     ScoreResult {
         num_of_steps: i32,
     },
+    Disconnect
 }
 
 #[derive(Debug, Default)]
@@ -177,7 +178,8 @@ impl Plugin for NetworkPlugin {
                 SystemSet::new()
                     .with_run_criteria(cond_to_receive_message_from_client)
                     .with_system(receive_message_from_client),
-            );
+            )
+            .add_system_set(SystemSet::on_exit(GameState::Multiplayer).with_system(disconnect));
     }
 }
 
@@ -285,6 +287,7 @@ fn receive_level_data_from_server(
             ServerMessage::ScoreResult { num_of_steps } => {
                 network_res.opponent_game_score.complete(num_of_steps);
             }
+            ServerMessage::Disconnect => {},
         }
     }
 }
@@ -367,7 +370,33 @@ fn receive_message_from_client(
                 ServerMessage::ScoreResult { num_of_steps } => {
                     network_res.opponent_game_score.complete(num_of_steps);
                 }
+                ServerMessage::Disconnect => {
+                    endpoint.disconnect_client(client_id).expect("Disconnecting client should be successful");
+                    server.stop_endpoint().expect("Stopping endpoint should be successful");
+                    network_res.connection_status = ConnectionStatus::None;
+                    network_res.connection_type = ConnectionType::None;
+                },
             }
         }
     };
+}
+
+fn disconnect(mut network_res: ResMut<NetworkResource>, mut client: ResMut<Client>, mut server: ResMut<Server>) {
+    if let ConnectionStatus::Connected { client_id: _ } = network_res.connection_status {
+        if network_res.connection_type == ConnectionType::Client {
+            client.connection().send_message(ServerMessage::Disconnect).expect("Disconnect message should be sent successfully");
+            network_res.connection_type = ConnectionType::None;
+            network_res.connection_status = ConnectionStatus::None;
+            // client.close_all_connections().expect("Closing all connections should be successful");
+            let channel_id = client.connection().get_default_channel().unwrap();
+            client.connection_mut().close_channel(channel_id).expect("Closing channel should be successful");
+            sleep(Duration::from_secs_f32(0.1));
+        }
+        if network_res.connection_type == ConnectionType::Server {
+            server.endpoint_mut().disconnect_all_clients().expect("Disconnecting all clients should be successful");
+            network_res.connection_type = ConnectionType::None;
+            network_res.connection_status = ConnectionStatus::None;
+            server.stop_endpoint().expect("Stopping endpoint should be successful");
+        }
+    }
 }

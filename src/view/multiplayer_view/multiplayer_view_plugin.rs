@@ -94,6 +94,7 @@ impl Plugin for MultiplayerViewPlugin {
             .add_system(choose_network_option)
             .add_system(choose_level)
             .add_system(start_game)
+            .add_system(update_connection_status_view)
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(cond_to_connect_to_client)
@@ -679,7 +680,7 @@ fn choose_network_option(
         (&Interaction, &NetworkOption, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>, With<NetworkOption>),
     >,
-    mut status_text: Query<&mut Text, (With<ConnectionStatusPanel>, Without<NetworkOption>)>,
+    // mut status_text: Query<&mut Text, (With<ConnectionStatusPanel>, Without<NetworkOption>)>,
     mut network_res: ResMut<NetworkResource>,
     mut server: ResMut<Server>,
     mut client: ResMut<Client>,
@@ -717,10 +718,10 @@ fn choose_network_option(
                         network_res.connection_type = ConnectionType::Client;
                     }
                 };
-                for mut text in &mut status_text {
-                    text.sections[0].value = "Connecting".to_string();
-                    text.sections[0].style.color = Color::RED;
-                }
+                // for mut text in &mut status_text {
+                //     text.sections[0].value = "Connecting".to_string();
+                //     text.sections[0].style.color = Color::RED;
+                // }
                 network_res.connection_status = ConnectionStatus::Waiting;
             }
             Interaction::Hovered => {
@@ -973,5 +974,22 @@ fn update_score_view(
         for mut text in &mut opponent_score_text {
             text.sections[0].value = "Number of steps: N/A".to_string();
         }
+    }
+}
+
+fn update_connection_status_view(
+    network_res: Res<NetworkResource>,
+    mut connection_status_panel: Query<&mut Text, With<ConnectionStatusPanel>>,
+    mut level_panel: Query<&mut Style, With<LevelPanel>>
+) {
+    let connected = if let ConnectionStatus::Connected { client_id: _ } = network_res.connection_status {true} else {false};
+    let waiting = if network_res.connection_status == ConnectionStatus::Waiting {true} else {false};
+    let is_server = network_res.connection_type == ConnectionType::Server;
+    for mut text in &mut connection_status_panel {
+        text.sections[0].value = if connected {"Connected".to_string()} else if waiting {"Connecting".to_string()} else {"".to_string()};
+        text.sections[0].style.color = if connected {Color::GREEN} else if waiting {Color::RED} else {Color::BLACK};
+    }
+    for mut style in &mut level_panel {
+        style.display = if is_server && connected {Display::Flex} else {Display::None};
     }
 }
