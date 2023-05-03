@@ -20,7 +20,9 @@ use crate::{
             ConfigResource, DatabaseConnection,
         },
         language_plugin::LanguageResource,
-        network_plugin::{GameStage, NetworkResource, SendScoreToClient, ConnectionType, SendScoreToServer},
+        network_plugin::{
+            ConnectionType, GameStage, NetworkResource, SendScoreToClient, SendScoreToServer,
+        },
         script_plugin::{reset_level, ScriptRes},
     },
     view::{image_handler::ImageMap, GameState},
@@ -466,7 +468,7 @@ fn no_save_exit(
     game: Res<Game>,
     mut network_res: ResMut<NetworkResource>,
     mut event_sender_to_client: EventWriter<SendScoreToClient>,
-    mut event_sender_to_server: EventWriter<SendScoreToServer>
+    mut event_sender_to_server: EventWriter<SendScoreToServer>,
 ) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {

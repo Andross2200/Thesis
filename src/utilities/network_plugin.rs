@@ -1,8 +1,12 @@
-use std::{net::{IpAddr, Ipv4Addr}, time::Duration, thread::sleep};
+use std::{
+    net::{IpAddr, Ipv4Addr},
+    thread::sleep,
+    time::Duration,
+};
 
 use bevy::{
     ecs::schedule::ShouldRun,
-    prelude::{info, EventReader, Plugin, Res, ResMut, Resource, State, SystemSet},
+    prelude::{EventReader, Plugin, Res, ResMut, Resource, State, SystemSet},
 };
 use bevy_quinnet::{
     client::{Client, QuinnetClientPlugin},
@@ -44,7 +48,7 @@ enum ServerMessage {
     ScoreResult {
         num_of_steps: i32,
     },
-    Disconnect
+    Disconnect,
 }
 
 #[derive(Debug, Default)]
@@ -197,7 +201,6 @@ fn send_level_data_to_client(network_res: Res<NetworkResource>, mut server: ResM
         } else {
             panic!()
         };
-    info!("Message sent: {:?}", message);
     endpoint
         .send_message(saved_client, message)
         .expect("The sending of message should be successful");
@@ -208,7 +211,7 @@ fn cond_send_score_to_server(
     mut event_reader: EventReader<SendScoreToServer>,
 ) -> ShouldRun {
     if network_res.connection_type == ConnectionType::Client {
-        for _ in event_reader.iter() {
+        if event_reader.iter().next().is_some() {
             return ShouldRun::Yes;
         }
         ShouldRun::No
@@ -232,7 +235,7 @@ fn cond_send_score_to_client(
     mut event_reader: EventReader<SendScoreToClient>,
 ) -> ShouldRun {
     if network_res.connection_type == ConnectionType::Server {
-        for _ in event_reader.iter() {
+        if event_reader.iter().next().is_some() {
             return ShouldRun::Yes;
         }
         ShouldRun::No
@@ -271,11 +274,8 @@ fn receive_level_data_from_server(
                 network_res.level_selection_data.level_id = id;
                 network_res.level_selection_data.fen = fen;
                 network_res.level_selection_data.level_name = name;
-                info!("Message received: {:?}", network_res.level_selection_data);
             }
             ServerMessage::StartGame => {
-                info!("Signal Received");
-                info!("{}", network_res.level_selection_data.fen.clone());
                 *game = Game::init_from_fen(
                     network_res.level_selection_data.fen.clone(),
                     network_res.level_selection_data.level_id,
@@ -287,7 +287,7 @@ fn receive_level_data_from_server(
             ServerMessage::ScoreResult { num_of_steps } => {
                 network_res.opponent_game_score.complete(num_of_steps);
             }
-            ServerMessage::Disconnect => {},
+            ServerMessage::Disconnect => {}
         }
     }
 }
@@ -297,7 +297,7 @@ fn cond_to_send_level_data_to_client(
     mut event_reader: EventReader<SendLevelDataToClient>,
 ) -> ShouldRun {
     if network_res.connection_type == ConnectionType::Server {
-        for _ in event_reader.iter() {
+        if event_reader.iter().next().is_some() {
             return ShouldRun::Yes;
         }
         ShouldRun::No
@@ -319,8 +319,7 @@ fn cond_to_send_start_game_signal(
     mut event_reader: EventReader<SendStartSignalToClient>,
 ) -> ShouldRun {
     if network_res.connection_type == ConnectionType::Server {
-        for _ in &mut event_reader.iter() {
-            info!("Event Received");
+        if event_reader.iter().next().is_some() {
             return ShouldRun::Yes;
         }
         ShouldRun::No
@@ -341,7 +340,6 @@ fn send_start_game_signal(mut server: ResMut<Server>, network_res: Res<NetworkRe
     endpoint
         .send_message(saved_client, message)
         .expect("The sending of message should be successful");
-    info!("Signal Sent");
 }
 
 fn cond_to_receive_message_from_client(network_res: Res<NetworkResource>) -> ShouldRun {
@@ -371,32 +369,51 @@ fn receive_message_from_client(
                     network_res.opponent_game_score.complete(num_of_steps);
                 }
                 ServerMessage::Disconnect => {
-                    endpoint.disconnect_client(client_id).expect("Disconnecting client should be successful");
-                    server.stop_endpoint().expect("Stopping endpoint should be successful");
+                    endpoint
+                        .disconnect_client(client_id)
+                        .expect("Disconnecting client should be successful");
+                    server
+                        .stop_endpoint()
+                        .expect("Stopping endpoint should be successful");
                     network_res.connection_status = ConnectionStatus::None;
                     network_res.connection_type = ConnectionType::None;
-                },
+                }
             }
         }
     };
 }
 
-fn disconnect(mut network_res: ResMut<NetworkResource>, mut client: ResMut<Client>, mut server: ResMut<Server>) {
+fn disconnect(
+    mut network_res: ResMut<NetworkResource>,
+    mut client: ResMut<Client>,
+    mut server: ResMut<Server>,
+) {
     if let ConnectionStatus::Connected { client_id: _ } = network_res.connection_status {
         if network_res.connection_type == ConnectionType::Client {
-            client.connection().send_message(ServerMessage::Disconnect).expect("Disconnect message should be sent successfully");
+            client
+                .connection()
+                .send_message(ServerMessage::Disconnect)
+                .expect("Disconnect message should be sent successfully");
             network_res.connection_type = ConnectionType::None;
             network_res.connection_status = ConnectionStatus::None;
             // client.close_all_connections().expect("Closing all connections should be successful");
             let channel_id = client.connection().get_default_channel().unwrap();
-            client.connection_mut().close_channel(channel_id).expect("Closing channel should be successful");
+            client
+                .connection_mut()
+                .close_channel(channel_id)
+                .expect("Closing channel should be successful");
             sleep(Duration::from_secs_f32(0.1));
         }
         if network_res.connection_type == ConnectionType::Server {
-            server.endpoint_mut().disconnect_all_clients().expect("Disconnecting all clients should be successful");
+            server
+                .endpoint_mut()
+                .disconnect_all_clients()
+                .expect("Disconnecting all clients should be successful");
             network_res.connection_type = ConnectionType::None;
             network_res.connection_status = ConnectionStatus::None;
-            server.stop_endpoint().expect("Stopping endpoint should be successful");
+            server
+                .stop_endpoint()
+                .expect("Stopping endpoint should be successful");
         }
     }
 }

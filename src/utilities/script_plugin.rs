@@ -338,8 +338,6 @@ pub fn run_script(
     {
         if game.collected_perls == game.required_perls {
             game.game_completed = GameCompleted::Yes;
-            info!("Level Completed");
-            info!("Steps: {}", game.solution_steps);
             game.solution = game.solution_steps;
             reset_level(script_res.borrow_mut(), game.borrow_mut())
         } else {

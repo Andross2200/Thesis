@@ -7,7 +7,7 @@ use std::{cmp::min, f32::consts::PI};
 pub enum GameMode {
     Tutorial,
     Challenge,
-    Multiplayer
+    Multiplayer,
 }
 
 #[derive(PartialEq, Eq)]

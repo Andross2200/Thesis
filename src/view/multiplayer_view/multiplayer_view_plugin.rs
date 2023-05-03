@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+
 use std::borrow::BorrowMut;
 
 use bevy::{
@@ -301,11 +303,23 @@ fn init_view(
                     parent
                         .spawn(
                             TextBundle::from_section(
-                                if let ConnectionStatus::Connected { client_id: _ } = network_res.connection_status {"Connected"} else {""},
+                                if let ConnectionStatus::Connected { client_id: _ } =
+                                    network_res.connection_status
+                                {
+                                    "Connected"
+                                } else {
+                                    ""
+                                },
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 40.0,
-                                    color: if let ConnectionStatus::Connected { client_id: _ } = network_res.connection_status {Color::GREEN} else {Color::BLACK},
+                                    color: if let ConnectionStatus::Connected { client_id: _ } =
+                                        network_res.connection_status
+                                    {
+                                        Color::GREEN
+                                    } else {
+                                        Color::BLACK
+                                    },
                                 },
                             )
                             .with_style(Style {
@@ -332,8 +346,11 @@ fn init_view(
                         display: if let ConnectionStatus::Connected { client_id: _ } =
                             network_res.connection_status
                         {
-                            if network_res.connection_type == ConnectionType::Server {Display::Flex} else {Display::None}
-
+                            if network_res.connection_type == ConnectionType::Server {
+                                Display::Flex
+                            } else {
+                                Display::None
+                            }
                         } else {
                             Display::None
                         },
@@ -448,7 +465,11 @@ fn init_view(
                         bottom: Val::Px(30.0),
                         ..Default::default()
                     },
-                    display: if network_res.game_stage == GameStage::End { Display::Flex} else {Display::None},
+                    display: if network_res.game_stage == GameStage::End {
+                        Display::Flex
+                    } else {
+                        Display::None
+                    },
                     ..Default::default()
                 }),
             );
@@ -460,7 +481,11 @@ fn init_view(
                         margin: UiRect::top(Val::Px(10.0)),
                         flex_direction: FlexDirection::Row,
                         justify_content: JustifyContent::SpaceAround,
-                        display: if network_res.game_stage == GameStage::End { Display::Flex} else {Display::None},
+                        display: if network_res.game_stage == GameStage::End {
+                            Display::Flex
+                        } else {
+                            Display::None
+                        },
                         ..Default::default()
                     },
                     ..Default::default()
@@ -680,7 +705,6 @@ fn choose_network_option(
         (&Interaction, &NetworkOption, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>, With<NetworkOption>),
     >,
-    // mut status_text: Query<&mut Text, (With<ConnectionStatusPanel>, Without<NetworkOption>)>,
     mut network_res: ResMut<NetworkResource>,
     mut server: ResMut<Server>,
     mut client: ResMut<Client>,
@@ -718,10 +742,6 @@ fn choose_network_option(
                         network_res.connection_type = ConnectionType::Client;
                     }
                 };
-                // for mut text in &mut status_text {
-                //     text.sections[0].value = "Connecting".to_string();
-                //     text.sections[0].style.color = Color::RED;
-                // }
                 network_res.connection_status = ConnectionStatus::Waiting;
             }
             Interaction::Hovered => {
@@ -779,41 +799,45 @@ fn connect_to_client(
     mut event_sender: EventWriter<SendLevelDataToClient>,
 ) {
     let endpoint = server.endpoint_mut();
-    if endpoint.clients().len() == 1 {
-        network_res.connection_status = ConnectionStatus::Connected {
-            client_id: *endpoint
-                .clients()
-                .get(0)
-                .expect("The id of the first client should be saved"),
-        };
-        for mut text in &mut status_text {
-            text.sections[0].value = "Connected".to_string();
-            text.sections[0].style.color = Color::GREEN;
-        }
-        for mut style in &mut level_selection_panel {
-            style.display = Display::Flex;
-        }
-        let (id, fen, level_name) = get_challenge_fen_at_ind(db_conn.borrow_mut(), 0);
-        network_res.level_selection_data.selected_level_id = 0;
-        network_res.level_selection_data.fen = fen;
-        network_res.level_selection_data.level_id = id;
-        network_res.level_selection_data.level_name = level_name;
-        let event = SendLevelDataToClient::default();
-        event_sender.send(event);
-    } else if endpoint.clients().len() > 1 {
-        let saved_client =
-            if let ConnectionStatus::Connected { client_id } = network_res.connection_status {
-                client_id
-            } else {
-                panic!()
+    match endpoint.clients().len() {
+        1 => {
+            network_res.connection_status = ConnectionStatus::Connected {
+                client_id: *endpoint
+                    .clients()
+                    .first()
+                    .expect("The id of the first client should be saved"),
             };
-        for client in endpoint.clients() {
-            if client != saved_client {
-                endpoint
-                    .disconnect_client(client)
-                    .expect("Any additional connected clients should be disconnected");
+            for mut text in &mut status_text {
+                text.sections[0].value = "Connected".to_string();
+                text.sections[0].style.color = Color::GREEN;
+            }
+            for mut style in &mut level_selection_panel {
+                style.display = Display::Flex;
+            }
+            let (id, fen, level_name) = get_challenge_fen_at_ind(db_conn.borrow_mut(), 0);
+            network_res.level_selection_data.selected_level_id = 0;
+            network_res.level_selection_data.fen = fen;
+            network_res.level_selection_data.level_id = id;
+            network_res.level_selection_data.level_name = level_name;
+            let event = SendLevelDataToClient::default();
+            event_sender.send(event);
+        }
+        2.. => {
+            let saved_client =
+                if let ConnectionStatus::Connected { client_id } = network_res.connection_status {
+                    client_id
+                } else {
+                    panic!()
+                };
+            for client in endpoint.clients() {
+                if client != saved_client {
+                    endpoint
+                        .disconnect_client(client)
+                        .expect("Any additional connected clients should be disconnected");
+                }
             }
         }
+        _ => {}
     }
 }
 
@@ -861,31 +885,30 @@ fn choose_level(
         match *interaction {
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
-                let new_level_selection: SelectedLevelData;
-                match *action_type {
+                let new_level_selection: SelectedLevelData = match *action_type {
                     SwitchLevel::Back => {
                         let (ind, id, fen, name) = get_prev_challenge_fen(
                             db_conn.borrow_mut(),
                             network_res.level_selection_data.selected_level_id,
                         );
-                        new_level_selection = SelectedLevelData {
+                        SelectedLevelData {
                             selected_level_id: ind,
                             level_id: id,
-                            fen: fen,
+                            fen,
                             level_name: name,
-                        };
+                        }
                     }
                     SwitchLevel::Forward => {
                         let (ind, id, fen, name) = get_next_challenge_fen(
                             db_conn.borrow_mut(),
                             network_res.level_selection_data.selected_level_id,
                         );
-                        new_level_selection = SelectedLevelData {
+                        SelectedLevelData {
                             selected_level_id: ind,
                             level_id: id,
-                            fen: fen,
+                            fen,
                             level_name: name,
-                        };
+                        }
                     }
                 };
                 network_res.level_selection_data = new_level_selection;
@@ -980,16 +1003,35 @@ fn update_score_view(
 fn update_connection_status_view(
     network_res: Res<NetworkResource>,
     mut connection_status_panel: Query<&mut Text, With<ConnectionStatusPanel>>,
-    mut level_panel: Query<&mut Style, With<LevelPanel>>
+    mut level_panel: Query<&mut Style, With<LevelPanel>>,
 ) {
-    let connected = if let ConnectionStatus::Connected { client_id: _ } = network_res.connection_status {true} else {false};
-    let waiting = if network_res.connection_status == ConnectionStatus::Waiting {true} else {false};
+    let connected = matches!(
+        network_res.connection_status,
+        ConnectionStatus::Connected { client_id: _ }
+    );
+    let waiting = network_res.connection_status == ConnectionStatus::Waiting;
     let is_server = network_res.connection_type == ConnectionType::Server;
     for mut text in &mut connection_status_panel {
-        text.sections[0].value = if connected {"Connected".to_string()} else if waiting {"Connecting".to_string()} else {"".to_string()};
-        text.sections[0].style.color = if connected {Color::GREEN} else if waiting {Color::RED} else {Color::BLACK};
+        text.sections[0].value = if connected {
+            "Connected".to_string()
+        } else if waiting {
+            "Connecting".to_string()
+        } else {
+            "".to_string()
+        };
+        text.sections[0].style.color = if connected {
+            Color::GREEN
+        } else if waiting {
+            Color::RED
+        } else {
+            Color::BLACK
+        };
     }
     for mut style in &mut level_panel {
-        style.display = if is_server && connected {Display::Flex} else {Display::None};
+        style.display = if is_server && connected {
+            Display::Flex
+        } else {
+            Display::None
+        };
     }
 }
