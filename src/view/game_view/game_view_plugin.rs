@@ -162,25 +162,16 @@ fn delete_puzzle_piece(
         if let Some(pos) = window.cursor_position() {
             let window_size = Vec2::new(window.width(), window.height());
             let world_position = pos - window_size / 2.;
-            info!(
-                "Mouse pos at Right Click: {} {}",
-                world_position.x, world_position.y
-            );
             for (entity, transform) in &mut puzzle_pieces {
                 let transform_x_from = transform.translation.x - 50.0;
                 let transform_y_from = transform.translation.y + 25.0;
                 let transfrom_x_to = transform_x_from + 100.0;
                 let transfrom_y_to = transform_y_from - 50.0;
-                info!(
-                    "Puzzle piece position: {} {} {} {}",
-                    transform_x_from, transform_y_from, transfrom_x_to, transfrom_y_to
-                );
                 if world_position.x >= transform_x_from
                     && world_position.x <= transfrom_x_to
                     && world_position.y <= transform_y_from
                     && world_position.y >= transfrom_y_to
                 {
-                    info!("Chosen");
                     let result = game
                         .puzzle
                         .iter()
@@ -250,7 +241,6 @@ pub fn select_puzzle_piece(
                         .expect("Entity should be in the array");
                     game.selected_puzzle_piece = index as i32;
                     sprite.color = Color::YELLOW;
-                    info!("Selected puzzle {}", index);
                 }
             }
         }

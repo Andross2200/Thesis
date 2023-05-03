@@ -20,7 +20,7 @@ use crate::{
     model::game_model::game::{Game, GameMode},
     utilities::{
         database_plugin::{
-            create_new_player, get_challenge_fen, update_cofig_file, ConfigResource,
+            create_new_player, get_random_challenge_fen, update_cofig_file, ConfigResource,
             DatabaseConnection,
         },
         language_plugin::LanguageResource,
@@ -446,12 +446,14 @@ fn menu_actions(
                         game_state.set(GameState::LevelSelector).unwrap();
                     }
                     MenuButtonAction::Challenge => {
-                        let (prefab_id, fen) = get_challenge_fen(db_conn.borrow_mut());
+                        let (prefab_id, fen) = get_random_challenge_fen(db_conn.borrow_mut());
                         *game = Game::init_from_fen(fen, prefab_id, GameMode::Challenge);
                         *script_res = ScriptRes::new();
                         game_state.set(GameState::Game).unwrap();
                     }
-                    MenuButtonAction::Multiplayer => {}
+                    MenuButtonAction::Multiplayer => {
+                        game_state.set(GameState::Multiplayer).unwrap();
+                    }
                     MenuButtonAction::Scoreboard => {
                         game_state.set(GameState::Scoreboard).unwrap();
                     }

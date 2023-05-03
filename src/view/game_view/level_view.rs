@@ -344,21 +344,11 @@ fn level_control_button_system(
             }
             Interaction::Hovered => {
                 match *button_type {
-                    LevelControlButtonType::Play => {
-                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
-                    }
-                    LevelControlButtonType::StepBack => {
-                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
-                    }
-                    LevelControlButtonType::StepForward => {
-                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
-                    }
-                    LevelControlButtonType::Pause => {
-                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
-                    }
-                    LevelControlButtonType::Stop => {
-                        info!("Button: {:?}, Action: {:?}", button_type, interaction);
-                    }
+                    LevelControlButtonType::Play => {}
+                    LevelControlButtonType::StepBack => {}
+                    LevelControlButtonType::StepForward => {}
+                    LevelControlButtonType::Pause => {}
+                    LevelControlButtonType::Stop => {}
                 };
                 *color = BackgroundColor(Color::AQUAMARINE);
             }

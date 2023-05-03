@@ -16,10 +16,13 @@ use crate::{
     model::game_model::game::{Game, GameCompleted, GameMode},
     utilities::{
         database_plugin::{
-            save_challenge_result, update_score_for_tutorial_level, ConfigResource,
-            DatabaseConnection,
+            save_challenge_result, save_multiplayer_result, update_score_for_tutorial_level,
+            ConfigResource, DatabaseConnection,
         },
         language_plugin::LanguageResource,
+        network_plugin::{
+            ConnectionType, GameStage, NetworkResource, SendScoreToClient, SendScoreToServer,
+        },
         script_plugin::{reset_level, ScriptRes},
     },
     view::{image_handler::ImageMap, GameState},
@@ -394,6 +397,8 @@ fn complete_game_button(
     mut db_conn: ResMut<DatabaseConnection>,
     mut game_state: ResMut<State<GameState>>,
     config: Res<ConfigResource>,
+    mut network_res: ResMut<NetworkResource>,
+    mut event_sender: EventWriter<SendScoreToClient>,
 ) {
     for (interaction, mut color) in &mut interaction_query {
         match *interaction {
@@ -426,6 +431,23 @@ fn complete_game_button(
                     );
                     game_state.set(GameState::MainMenu).unwrap();
                 }
+                if game.game_mode == GameMode::Multiplayer {
+                    network_res.my_game_score.complete(game.solution);
+                    network_res.game_stage = GameStage::End;
+                    save_multiplayer_result(
+                        &mut db_conn,
+                        config
+                            .local_players
+                            .get(config.selected_player_id as usize)
+                            .unwrap()
+                            .id,
+                        game.fen.clone(),
+                        game.solution,
+                        game.level_id,
+                    );
+                    event_sender.send(SendScoreToClient::default());
+                    game_state.set(GameState::Multiplayer).unwrap();
+                }
             }
             Interaction::Hovered => {
                 *color = BackgroundColor(Color::AQUAMARINE);
@@ -444,6 +466,9 @@ fn no_save_exit(
     >,
     mut game_state: ResMut<State<GameState>>,
     game: Res<Game>,
+    mut network_res: ResMut<NetworkResource>,
+    mut event_sender_to_client: EventWriter<SendScoreToClient>,
+    mut event_sender_to_server: EventWriter<SendScoreToServer>,
 ) {
     for (interaction, mut back_color) in &mut interaction_query {
         match *interaction {
@@ -454,6 +479,16 @@ fn no_save_exit(
                 }
                 if game.game_mode == GameMode::Challenge {
                     game_state.set(GameState::MainMenu).unwrap();
+                }
+                if game.game_mode == GameMode::Multiplayer {
+                    network_res.my_game_score.complete(0);
+                    network_res.game_stage = GameStage::End;
+                    if network_res.connection_type == ConnectionType::Server {
+                        event_sender_to_client.send(SendScoreToClient::default());
+                    } else {
+                        event_sender_to_server.send(SendScoreToServer::default());
+                    }
+                    game_state.set(GameState::Multiplayer).unwrap();
                 }
             }
             Interaction::Hovered => {

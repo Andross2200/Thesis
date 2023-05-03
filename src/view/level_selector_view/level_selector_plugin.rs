@@ -15,7 +15,7 @@ use crate::{
 use bevy::prelude::{DespawnRecursiveExt, State};
 use bevy::{
     prelude::{
-        info, BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component, Entity,
+        BuildChildren, Button, ButtonBundle, Changed, Color, Commands, Component, Entity,
         NodeBundle, Plugin, Query, Res, ResMut, Resource, SystemSet, TextBundle, With,
     },
     text::TextStyle,
@@ -83,11 +83,6 @@ fn init_view(
     language: Res<LanguageResource>,
 ) {
     let window = windows.get_primary().unwrap();
-    info!(
-        "window width: {}; window height: {}",
-        window.width(),
-        window.height()
-    );
     let num_of_panels_in_row = (window.width() / (SINGLE_PANEL_WIDTH + 50.0)).floor();
     let width_of_row = ((SINGLE_PANEL_WIDTH + 50.0) * num_of_panels_in_row) - 50.0;
     let init_left_shift = (window.width() - width_of_row) / 2.0;
