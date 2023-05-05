@@ -5,7 +5,7 @@ use mysql::{prelude::Queryable, *};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-const FILE_PATH: &str = "./config.json";
+const FILE_PATH: &str = "./assets/config.json";
 
 #[derive(Clone, Debug)]
 pub struct ChallengeScore {
