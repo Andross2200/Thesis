@@ -158,11 +158,6 @@ impl Plugin for NetworkPlugin {
                     .with_run_criteria(cond_to_receive_message_from_server)
                     .with_system(receive_level_data_from_server),
             )
-            // .add_system_set(
-            //     SystemSet::new()
-            //         .with_run_criteria(cond_to_receive_message_from_server)
-            //         .with_system(start_game_as_client),
-            // )
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(cond_to_send_start_game_signal)
