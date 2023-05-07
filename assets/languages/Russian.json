@@ -50,6 +50,7 @@
     "scoreboard": {
       "title": "Доска почета",
       "challenge_scores_title": "Режим \"Вызов\"",
+      "multiplayer_scores_title": "Режим \"Мультиплеер\"",
       "go_back_button": "Назад"
     }
   }

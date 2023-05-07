@@ -52,6 +52,7 @@ pub struct GameText {
 pub struct ScoreboardText {
     pub title: String,
     pub challenge_scores_title: String,
+    pub multiplayer_scores_title: String,
     pub go_back_button: String,
 }
 

@@ -50,6 +50,7 @@
   "scoreboard": {
     "title": "Scoreboard",
     "challenge_scores_title": "Challenge mode",
+    "multiplayer_scores_title": "Multiplayer mode",
     "go_back_button": "Go Back"
   }
 }

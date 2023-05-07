@@ -503,3 +503,38 @@ pub fn save_multiplayer_result(
         .commit()
         .expect("Transaction for getting all levels must be commited");
 }
+
+pub fn get_best_ten_multiplayer_scores_for_player(
+    db_conn: &mut ResMut<DatabaseConnection>,
+    player_id: i32,
+) -> Vec<ChallengeScore> {
+    let query = format!(
+        r"SELECT ms.prefab_id, cp.level_name, ms.num_of_steps FROM multiplayer_solutions ms
+        LEFT JOIN challenge_prefabs cp ON ms.prefab_id = cp.id
+        WHERE ms.player_id = {player_id}
+        ORDER BY ms.num_of_steps DESC;"
+    );
+    let mut transaction = db_conn
+        .conn
+        .start_transaction(TxOpts::default())
+        .expect("New transaction must be started");
+
+    let all_player_scores = transaction
+        .query_map(query, |(prefab_id, level_name, num_of_steps)| {
+            ChallengeScore {
+                prefab_id,
+                level_name,
+                num_of_steps,
+            }
+        })
+        .expect("Query must be successful");
+
+    transaction
+        .commit()
+        .expect("Transaction should be committed");
+    if all_player_scores.len() >= 10 {
+        all_player_scores[0..10].to_vec()
+    } else {
+        all_player_scores.to_vec()
+    }
+}

@@ -17,7 +17,7 @@ use bevy::{
 use crate::{
     utilities::{
         database_plugin::{
-            get_best_ten_challenge_scores_for_player, ConfigResource, DatabaseConnection,
+            get_best_ten_challenge_scores_for_player, ConfigResource, DatabaseConnection, get_best_ten_multiplayer_scores_for_player,
         },
         language_plugin::LanguageResource,
     },
@@ -193,6 +193,106 @@ fn init_view(
         .id();
 
     commands.entity(main_panel).add_child(challenge_scores);
+
+    // Multiplayer scores
+    let first_ten_mul_scores = get_best_ten_multiplayer_scores_for_player(
+        db_conn.borrow_mut(),
+        config.local_players[config.selected_player_id as usize].id,
+    );
+
+    let multiplayer_scores = commands
+        .spawn(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::FlexStart,
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .with_children(|parent| {
+            parent.spawn(
+                TextBundle::from_section(
+                    language.scoreboard.multiplayer_scores_title.clone(),
+                    TextStyle {
+                        font: image_handler.2.get(0).unwrap().clone(),
+                        font_size: 40.0,
+                        color: Color::BLACK,
+                    },
+                )
+                .with_style(Style {
+                    margin: UiRect::bottom(Val::Px(20.0)),
+                    ..Default::default()
+                }),
+            );
+
+            for (i, item) in first_ten_mul_scores.iter().enumerate() {
+                let back_color = if i % 2 == 0 {
+                    BackgroundColor(Color::WHITE)
+                } else {
+                    BackgroundColor(Color::GRAY)
+                };
+                parent
+                    .spawn(NodeBundle {
+                        style: Style {
+                            size: Size::new(Val::Percent(35.0), Val::Px(30.0)),
+                            flex_direction: FlexDirection::Row,
+                            position: UiRect::left(Val::Percent(1.0)),
+                            justify_content: JustifyContent::SpaceBetween,
+                            ..Default::default()
+                        },
+                        background_color: back_color,
+                        ..Default::default()
+                    })
+                    .with_children(|node| {
+                        node.spawn(
+                            TextBundle::from_section(
+                                item.prefab_id.to_string(),
+                                TextStyle {
+                                    font: image_handler.2.get(0).unwrap().clone(),
+                                    font_size: 30.0,
+                                    color: Color::BLACK,
+                                },
+                            )
+                            .with_style(Style {
+                                margin: UiRect::right(Val::Px(30.0)),
+                                ..Default::default()
+                            }),
+                        );
+                        node.spawn(
+                            TextBundle::from_section(
+                                item.level_name.to_string(),
+                                TextStyle {
+                                    font: image_handler.2.get(0).unwrap().clone(),
+                                    font_size: 30.0,
+                                    color: Color::BLACK,
+                                },
+                            )
+                            .with_style(Style {
+                                margin: UiRect::right(Val::Px(30.0)),
+                                ..Default::default()
+                            }),
+                        );
+                        node.spawn(
+                            TextBundle::from_section(
+                                format!("{} steps", item.num_of_steps),
+                                TextStyle {
+                                    font: image_handler.2.get(0).unwrap().clone(),
+                                    font_size: 30.0,
+                                    color: Color::BLACK,
+                                },
+                            )
+                            .with_style(Style {
+                                margin: UiRect::right(Val::Px(30.0)),
+                                ..Default::default()
+                            }),
+                        );
+                    });
+            }
+        })
+        .id();
+
+        commands.entity(main_panel).add_child(multiplayer_scores);
 
     commands
         .spawn(ButtonBundle {
