@@ -206,11 +206,6 @@ fn create_levele_panels(
     language: &Res<LanguageResource>,
 ) {
     if !level_selector_data.panels.is_empty() {
-        // for entity in 0..level_selector_data.panels.len() {
-        //     commands
-        //         .entity(*level_selector_data.panels.get(entity).unwrap())
-        //         .despawn_recursive();
-        // }
         level_selector_data.panels.clear();
     }
     let mut item_counter = level_selector_data.start_index;
