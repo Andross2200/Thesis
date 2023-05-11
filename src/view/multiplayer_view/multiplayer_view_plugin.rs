@@ -32,7 +32,7 @@ use crate::{
             ConnectionStatus, ConnectionType, GameStage, NetworkResource, SelectedLevelData,
             SendLevelDataToClient, SendStartSignalToClient,
         },
-        script_plugin::ScriptRes,
+        script_plugin::ScriptRes, language_plugin::LanguageResource,
     },
     view::{despawn_screen, image_handler::ImageMap, GameState},
 };
@@ -137,6 +137,7 @@ fn init_view(
     mut commands: Commands,
     image_handler: Res<ImageMap>,
     network_res: Res<NetworkResource>,
+    language: Res<LanguageResource>
 ) {
     commands
         .spawn(NodeBundle {
@@ -162,7 +163,7 @@ fn init_view(
         .with_children(|parent| {
             parent.spawn(
                 TextBundle::from_section(
-                    "Multiplayer",
+                    language.multiplayer.title.clone(),
                     TextStyle {
                         font: image_handler.2.get(1).unwrap().clone(),
                         font_size: 80.0,
@@ -447,7 +448,7 @@ fn init_view(
                         })
                         .with_children(|button| {
                             button.spawn(TextBundle::from_section(
-                                "Host",
+                                language.multiplayer.host_button.clone(),
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 40.0,
@@ -479,7 +480,7 @@ fn init_view(
                         })
                         .with_children(|button| {
                             button.spawn(TextBundle::from_section(
-                                "Connect to",
+                                language.multiplayer.connect_button.clone(),
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 40.0,
@@ -495,9 +496,9 @@ fn init_view(
                                 if let ConnectionStatus::Connected { client_id: _ } =
                                     network_res.connection_status
                                 {
-                                    "Connected"
+                                    language.multiplayer.connect_status[1].clone()
                                 } else {
-                                    ""
+                                    "".to_string()
                                 },
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
@@ -626,7 +627,7 @@ fn init_view(
                         })
                         .with_children(|button| {
                             button.spawn(TextBundle::from_section(
-                                "Start game",
+                                language.multiplayer.start_button.clone(),
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 40.0,
@@ -641,7 +642,7 @@ fn init_view(
             // Scores label
             parent.spawn(
                 TextBundle::from_section(
-                    "Scores",
+                    language.multiplayer.score_title.clone(),
                     TextStyle {
                         font: image_handler.2.get(1).unwrap().clone(),
                         font_size: 80.0,
@@ -694,7 +695,7 @@ fn init_view(
                     .with_children(|node| {
                         node.spawn(
                             TextBundle::from_section(
-                                "My Scores",
+                                language.multiplayer.score_subtitles[0].clone(),
                                 TextStyle {
                                     font: image_handler.2.get(1).unwrap().clone(),
                                     font_size: 60.0,
@@ -745,7 +746,7 @@ fn init_view(
                     .with_children(|node| {
                         node.spawn(
                             TextBundle::from_section(
-                                "Opponent Scores",
+                                language.multiplayer.score_subtitles[1].clone(),
                                 TextStyle {
                                     font: image_handler.2.get(1).unwrap().clone(),
                                     font_size: 60.0,
@@ -808,7 +809,7 @@ fn init_view(
         .insert(MultiplayerView)
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "Go Back",
+                language.multiplayer.go_back_button.clone(),
                 TextStyle {
                     font: image_handler.2.get(0).unwrap().clone(),
                     font_size: 30.0,
@@ -1000,6 +1001,7 @@ fn connect_to_client(
     mut level_selection_panel: Query<&mut Style, With<LevelPanel>>,
     mut db_conn: ResMut<DatabaseConnection>,
     mut event_sender: EventWriter<SendLevelDataToClient>,
+    language: Res<LanguageResource>
 ) {
     let endpoint = server.endpoint_mut();
     match endpoint.clients().len() {
@@ -1011,7 +1013,7 @@ fn connect_to_client(
                     .expect("The id of the first client should be saved"),
             };
             for mut text in &mut status_text {
-                text.sections[0].value = "Connected".to_string();
+                text.sections[0].value = language.multiplayer.connect_status[1].clone();
                 text.sections[0].style.color = Color::GREEN;
             }
             for mut style in &mut level_selection_panel {
@@ -1065,11 +1067,12 @@ fn connect_to_server(
         ),
     >,
     mut network_res: ResMut<NetworkResource>,
+    language: Res<LanguageResource>
 ) {
     if client.get_connection().is_some() {
         network_res.connection_status = ConnectionStatus::Connected { client_id: 0 };
         for mut text in &mut status_text {
-            text.sections[0].value = "Connected".to_string();
+            text.sections[0].value = language.multiplayer.connect_status[1].clone();
             text.sections[0].style.color = Color::GREEN;
         }
     }
@@ -1176,29 +1179,30 @@ fn update_score_view(
     network_res: Res<NetworkResource>,
     mut my_score_text: Query<&mut Text, (With<MyScoreText>, Without<OpponentScoreText>)>,
     mut opponent_score_text: Query<&mut Text, (With<OpponentScoreText>, Without<MyScoreText>)>,
+    language: Res<LanguageResource>
 ) {
     if network_res.my_game_score.completed {
         for mut text in &mut my_score_text {
             text.sections[0].value = format!(
-                "Number of steps: {}",
+                "{}: {}", language.multiplayer.num_of_steps.clone(),
                 network_res.my_game_score.num_of_steps
             );
         }
     } else {
         for mut text in &mut my_score_text {
-            text.sections[0].value = "Number of steps: N/A".to_string();
+            text.sections[0].value = format!("{}: N/A", language.multiplayer.num_of_steps.clone());
         }
     }
     if network_res.opponent_game_score.completed {
         for mut text in &mut opponent_score_text {
             text.sections[0].value = format!(
-                "Number of steps: {}",
+                "{}: {}", language.multiplayer.num_of_steps.clone(),
                 network_res.opponent_game_score.num_of_steps
             );
         }
     } else {
         for mut text in &mut opponent_score_text {
-            text.sections[0].value = "Number of steps: N/A".to_string();
+            text.sections[0].value = format!("{}: N/A", language.multiplayer.num_of_steps.clone());
         }
     }
 }
@@ -1207,6 +1211,7 @@ fn update_connection_status_view(
     network_res: Res<NetworkResource>,
     mut connection_status_panel: Query<&mut Text, With<ConnectionStatusPanel>>,
     mut level_panel: Query<&mut Style, With<LevelPanel>>,
+    language: Res<LanguageResource>
 ) {
     let connected = matches!(
         network_res.connection_status,
@@ -1216,12 +1221,12 @@ fn update_connection_status_view(
     let is_server = network_res.connection_type == ConnectionType::Server;
     for mut text in &mut connection_status_panel {
         text.sections[0].value = if connected {
-            "Connected".to_string()
+            language.multiplayer.connect_status[1].clone()
         } else if waiting {
             if is_server {
-                format!("waiting at: {}", local_ip().unwrap())
+                format!("{} at: {}", language.multiplayer.connect_status[0].clone(), local_ip().unwrap())
             } else {
-                "Connecting".to_string()
+                language.multiplayer.connect_status[1].clone()
             }
         } else {
             "".to_string()

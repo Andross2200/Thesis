@@ -56,12 +56,26 @@ pub struct ScoreboardText {
     pub go_back_button: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MultilayerText {
+    pub title: String,
+    pub host_button: String,
+    pub connect_button: String,
+    pub connect_status: Vec<String>,
+    pub start_button: String,
+    pub score_title: String,
+    pub score_subtitles: Vec<String>,
+    pub num_of_steps: String,
+    pub go_back_button: String
+}
+
 #[derive(Debug, Serialize, Deserialize, Resource)]
 pub struct LanguageResource {
     pub main_menu: MainMenu,
     pub level_selector: LevelSelector,
     pub game: GameText,
     pub scoreboard: ScoreboardText,
+    pub multiplayer: MultilayerText
 }
 pub struct LanguagePlugin;
 

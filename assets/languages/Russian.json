@@ -52,5 +52,16 @@
       "challenge_scores_title": "Режим \"Вызов\"",
       "multiplayer_scores_title": "Режим \"Мультиплеер\"",
       "go_back_button": "Назад"
+    },
+    "multiplayer": {
+      "title": "Мультиплеер",
+      "host_button": "Создать",
+      "connect_button": "Присоединиться",
+      "connect_status": ["Ждем", "Подключен"],
+      "start_button": "Начать",
+      "score_title": "Результат",
+      "score_subtitles": ["Мой", "Оппонент"],
+      "num_of_steps": "Шагов",
+      "go_back_button": "Назад"
     }
   }
