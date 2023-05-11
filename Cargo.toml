@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bevy = "0.9.1"
 bevy_quinnet = "0.3"
+local-ip-address = "0.5.3"
 mysql = "23.0.1"
 rand = "0.8.5"
 serde = { version = "1.0.160", features = ["derive"] }
