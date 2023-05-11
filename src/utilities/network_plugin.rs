@@ -1,8 +1,4 @@
-use std::{
-    net::{IpAddr, Ipv4Addr},
-    thread::sleep,
-    time::Duration,
-};
+use std::{thread::sleep, time::Duration};
 
 use bevy::{
     ecs::schedule::ShouldRun,
@@ -108,8 +104,7 @@ pub enum GameStage {
 
 #[derive(Debug, Resource)]
 pub struct NetworkResource {
-    pub ip: IpAddr,
-    pub ports: Vec<u16>,
+    pub ip: Vec<u32>,
     pub selected_port_ind: i32,
     pub connection_type: ConnectionType,
     pub connection_status: ConnectionStatus,
@@ -122,10 +117,7 @@ pub struct NetworkResource {
 impl Default for NetworkResource {
     fn default() -> Self {
         NetworkResource {
-            ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-            ports: vec![
-                225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
-            ],
+            ip: vec![127, 0, 0, 1],
             selected_port_ind: 0,
             connection_type: ConnectionType::None,
             connection_status: ConnectionStatus::None,
@@ -178,7 +170,7 @@ impl Plugin for NetworkPlugin {
                     .with_run_criteria(cond_to_receive_message_from_client)
                     .with_system(receive_message_from_client),
             )
-            .add_system_set(SystemSet::on_exit(GameState::Multiplayer).with_system(disconnect));
+            .add_system_set(SystemSet::on_enter(GameState::MainMenu).with_system(disconnect));
     }
 }
 

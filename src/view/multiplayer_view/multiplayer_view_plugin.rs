@@ -28,6 +28,7 @@ use crate::{
             get_challenge_fen_at_ind, get_next_challenge_fen, get_prev_challenge_fen,
             DatabaseConnection,
         },
+        language_plugin::LanguageResource,
         network_plugin::{
             ConnectionStatus, ConnectionType, GameStage, NetworkResource, SelectedLevelData,
             SendLevelDataToClient, SendStartSignalToClient,
@@ -36,6 +37,8 @@ use crate::{
     },
     view::{despawn_screen, image_handler::ImageMap, GameState},
 };
+
+use local_ip_address::local_ip;
 
 #[derive(Debug, Component)]
 struct MyScoreText;
@@ -50,7 +53,9 @@ struct LevelNameText;
 struct LevelPanel;
 
 #[derive(Debug, Component)]
-struct ChannelText;
+struct ChannelText {
+    id: u32,
+}
 
 #[derive(Debug, Component)]
 struct MultiplayerView;
@@ -60,8 +65,8 @@ struct GoBackButton;
 
 #[derive(Debug, Component)]
 enum SwitchChannel {
-    Back,
-    Forward,
+    Back { id: u32 },
+    Forward { id: u32 },
 }
 
 #[derive(Debug, Component)]
@@ -92,7 +97,6 @@ impl Plugin for MultiplayerViewPlugin {
                     .with_system(despawn_screen::<MultiplayerView>),
             )
             .add_system(back_to_main_menu)
-            .add_system(change_channel)
             .add_system(choose_network_option)
             .add_system(choose_level)
             .add_system(start_game)
@@ -116,6 +120,16 @@ impl Plugin for MultiplayerViewPlugin {
                 SystemSet::new()
                     .with_run_criteria(cond_to_update_score_view)
                     .with_system(update_score_view),
+            )
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(cond_to_redraw_channel_selection)
+                    .with_system(redraw_channel_selection),
+            )
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(cond_to_redraw_channel_selection)
+                    .with_system(switch_channel_buttons),
             );
     }
 }
@@ -124,6 +138,7 @@ fn init_view(
     mut commands: Commands,
     image_handler: Res<ImageMap>,
     network_res: Res<NetworkResource>,
+    language: Res<LanguageResource>,
 ) {
     commands
         .spawn(NodeBundle {
@@ -131,11 +146,11 @@ fn init_view(
                 position_type: PositionType::Absolute,
                 position: UiRect {
                     top: Val::Percent(5.0),
-                    left: Val::Percent(25.0),
+                    left: Val::Percent(20.0),
                     ..Default::default()
                 },
                 size: Size {
-                    width: Val::Percent(50.0),
+                    width: Val::Percent(60.0),
                     height: Val::Percent(90.0),
                 },
                 flex_direction: FlexDirection::Column,
@@ -149,7 +164,7 @@ fn init_view(
         .with_children(|parent| {
             parent.spawn(
                 TextBundle::from_section(
-                    "Multiplayer",
+                    language.multiplayer.title.clone(),
                     TextStyle {
                         font: image_handler.2.get(1).unwrap().clone(),
                         font_size: 80.0,
@@ -170,7 +185,7 @@ fn init_view(
             parent
                 .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(100.0), Val::Px(60.0)),
+                        size: Size::new(Val::Percent(100.0), Val::Px(170.0)),
                         flex_direction: FlexDirection::Row,
                         align_items: AlignItems::FlexStart,
                         margin: UiRect::bottom(Val::Px(10.0)),
@@ -185,7 +200,7 @@ fn init_view(
                             style: Style {
                                 size: Size {
                                     width: Val::Px(330.0),
-                                    height: Val::Px(60.0),
+                                    height: Val::Px(170.0),
                                 },
                                 align_items: AlignItems::Center,
                                 justify_content: JustifyContent::Center,
@@ -195,45 +210,221 @@ fn init_view(
                             ..Default::default()
                         })
                         .with_children(|node| {
-                            node.spawn(ButtonBundle {
+                            // first number
+                            node.spawn(NodeBundle {
                                 style: Style {
-                                    size: Size::new(Val::Px(50.0), Val::Px(50.0)),
-                                    margin: UiRect::all(Val::Px(5.0)),
-                                    position_type: PositionType::Absolute,
-                                    position: UiRect::left(Val::Px(5.0)),
+                                    size: Size::new(Val::Px(60.0), Val::Percent(100.0)),
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
                                     ..Default::default()
                                 },
-                                image: image_handler.1.get(7).unwrap().clone(),
                                 ..Default::default()
                             })
-                            .insert(SwitchChannel::Back);
-                            node.spawn(
-                                TextBundle::from_section(
-                                    format!("Channel {}", (network_res.selected_port_ind + 1)),
-                                    TextStyle {
-                                        font: image_handler.2.get(0).unwrap().clone(),
-                                        font_size: 30.0,
-                                        color: Color::BLACK,
-                                    },
-                                )
-                                .with_style(Style {
-                                    margin: UiRect::all(Val::Px(5.0)),
-                                    ..Default::default()
-                                }),
-                            )
-                            .insert(ChannelText);
-                            node.spawn(ButtonBundle {
+                            .with_children(|small_node| {
+                                small_node
+                                    .spawn(ButtonBundle {
+                                        style: Style {
+                                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                            margin: UiRect::all(Val::Px(5.0)),
+                                            ..Default::default()
+                                        },
+                                        image: image_handler.1.get(5).unwrap().clone(),
+                                        ..Default::default()
+                                    })
+                                    .insert(SwitchChannel::Forward { id: 0 });
+                                small_node
+                                    .spawn(
+                                        TextBundle::from_section(
+                                            format!("{}", network_res.ip[0]),
+                                            TextStyle {
+                                                font: image_handler.2.get(0).unwrap().clone(),
+                                                font_size: 40.0,
+                                                color: Color::BLACK,
+                                            },
+                                        )
+                                        .with_style(
+                                            Style {
+                                                size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                                ..Default::default()
+                                            },
+                                        ),
+                                    )
+                                    .insert(ChannelText { id: 0 });
+                                small_node
+                                    .spawn(ButtonBundle {
+                                        style: Style {
+                                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                            margin: UiRect::all(Val::Px(5.0)),
+                                            ..Default::default()
+                                        },
+                                        image: image_handler.1.get(6).unwrap().clone(),
+                                        ..Default::default()
+                                    })
+                                    .insert(SwitchChannel::Back { id: 0 });
+                            });
+
+                            // second number
+                            node.spawn(NodeBundle {
                                 style: Style {
-                                    size: Size::new(Val::Px(50.0), Val::Px(50.0)),
-                                    margin: UiRect::all(Val::Px(5.0)),
-                                    position_type: PositionType::Absolute,
-                                    position: UiRect::right(Val::Px(5.0)),
+                                    size: Size::new(Val::Px(60.0), Val::Percent(100.0)),
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
                                     ..Default::default()
                                 },
-                                image: image_handler.1.get(8).unwrap().clone(),
                                 ..Default::default()
                             })
-                            .insert(SwitchChannel::Forward);
+                            .with_children(|small_node| {
+                                small_node
+                                    .spawn(ButtonBundle {
+                                        style: Style {
+                                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                            margin: UiRect::all(Val::Px(5.0)),
+                                            ..Default::default()
+                                        },
+                                        image: image_handler.1.get(5).unwrap().clone(),
+                                        ..Default::default()
+                                    })
+                                    .insert(SwitchChannel::Forward { id: 1 });
+                                small_node
+                                    .spawn(
+                                        TextBundle::from_section(
+                                            format!("{}", network_res.ip[1]),
+                                            TextStyle {
+                                                font: image_handler.2.get(0).unwrap().clone(),
+                                                font_size: 40.0,
+                                                color: Color::BLACK,
+                                            },
+                                        )
+                                        .with_style(
+                                            Style {
+                                                size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                                ..Default::default()
+                                            },
+                                        ),
+                                    )
+                                    .insert(ChannelText { id: 1 });
+                                small_node
+                                    .spawn(ButtonBundle {
+                                        style: Style {
+                                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                            margin: UiRect::all(Val::Px(5.0)),
+                                            ..Default::default()
+                                        },
+                                        image: image_handler.1.get(6).unwrap().clone(),
+                                        ..Default::default()
+                                    })
+                                    .insert(SwitchChannel::Back { id: 1 });
+                            });
+
+                            // third number
+                            node.spawn(NodeBundle {
+                                style: Style {
+                                    size: Size::new(Val::Px(60.0), Val::Percent(100.0)),
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            })
+                            .with_children(|small_node| {
+                                small_node
+                                    .spawn(ButtonBundle {
+                                        style: Style {
+                                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                            margin: UiRect::all(Val::Px(5.0)),
+                                            ..Default::default()
+                                        },
+                                        image: image_handler.1.get(5).unwrap().clone(),
+                                        ..Default::default()
+                                    })
+                                    .insert(SwitchChannel::Forward { id: 2 });
+                                small_node
+                                    .spawn(
+                                        TextBundle::from_section(
+                                            format!("{}", network_res.ip[2]),
+                                            TextStyle {
+                                                font: image_handler.2.get(0).unwrap().clone(),
+                                                font_size: 40.0,
+                                                color: Color::BLACK,
+                                            },
+                                        )
+                                        .with_style(
+                                            Style {
+                                                size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                                ..Default::default()
+                                            },
+                                        ),
+                                    )
+                                    .insert(ChannelText { id: 2 });
+                                small_node
+                                    .spawn(ButtonBundle {
+                                        style: Style {
+                                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                            margin: UiRect::all(Val::Px(5.0)),
+                                            ..Default::default()
+                                        },
+                                        image: image_handler.1.get(6).unwrap().clone(),
+                                        ..Default::default()
+                                    })
+                                    .insert(SwitchChannel::Back { id: 2 });
+                            });
+
+                            // fourth number
+                            node.spawn(NodeBundle {
+                                style: Style {
+                                    size: Size::new(Val::Px(60.0), Val::Percent(100.0)),
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            })
+                            .with_children(|small_node| {
+                                small_node
+                                    .spawn(ButtonBundle {
+                                        style: Style {
+                                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                            margin: UiRect::all(Val::Px(5.0)),
+                                            ..Default::default()
+                                        },
+                                        image: image_handler.1.get(5).unwrap().clone(),
+                                        ..Default::default()
+                                    })
+                                    .insert(SwitchChannel::Forward { id: 3 });
+                                small_node
+                                    .spawn(
+                                        TextBundle::from_section(
+                                            format!("{}", network_res.ip[3]),
+                                            TextStyle {
+                                                font: image_handler.2.get(0).unwrap().clone(),
+                                                font_size: 40.0,
+                                                color: Color::BLACK,
+                                            },
+                                        )
+                                        .with_style(
+                                            Style {
+                                                size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                                ..Default::default()
+                                            },
+                                        ),
+                                    )
+                                    .insert(ChannelText { id: 3 });
+                                small_node
+                                    .spawn(ButtonBundle {
+                                        style: Style {
+                                            size: Size::new(Val::Px(50.0), Val::Px(50.0)),
+                                            margin: UiRect::all(Val::Px(5.0)),
+                                            ..Default::default()
+                                        },
+                                        image: image_handler.1.get(6).unwrap().clone(),
+                                        ..Default::default()
+                                    })
+                                    .insert(SwitchChannel::Back { id: 4 });
+                            });
                         });
 
                     parent
@@ -258,7 +449,7 @@ fn init_view(
                         })
                         .with_children(|button| {
                             button.spawn(TextBundle::from_section(
-                                "Host",
+                                language.multiplayer.host_button.clone(),
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 40.0,
@@ -290,7 +481,7 @@ fn init_view(
                         })
                         .with_children(|button| {
                             button.spawn(TextBundle::from_section(
-                                "Connect to",
+                                language.multiplayer.connect_button.clone(),
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 40.0,
@@ -306,9 +497,9 @@ fn init_view(
                                 if let ConnectionStatus::Connected { client_id: _ } =
                                     network_res.connection_status
                                 {
-                                    "Connected"
+                                    language.multiplayer.connect_status[1].clone()
                                 } else {
-                                    ""
+                                    "".to_string()
                                 },
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
@@ -437,7 +628,7 @@ fn init_view(
                         })
                         .with_children(|button| {
                             button.spawn(TextBundle::from_section(
-                                "Start game",
+                                language.multiplayer.start_button.clone(),
                                 TextStyle {
                                     font: image_handler.2.get(0).unwrap().clone(),
                                     font_size: 40.0,
@@ -452,7 +643,7 @@ fn init_view(
             // Scores label
             parent.spawn(
                 TextBundle::from_section(
-                    "Scores",
+                    language.multiplayer.score_title.clone(),
                     TextStyle {
                         font: image_handler.2.get(1).unwrap().clone(),
                         font_size: 80.0,
@@ -505,7 +696,7 @@ fn init_view(
                     .with_children(|node| {
                         node.spawn(
                             TextBundle::from_section(
-                                "My Scores",
+                                language.multiplayer.score_subtitles[0].clone(),
                                 TextStyle {
                                     font: image_handler.2.get(1).unwrap().clone(),
                                     font_size: 60.0,
@@ -556,7 +747,7 @@ fn init_view(
                     .with_children(|node| {
                         node.spawn(
                             TextBundle::from_section(
-                                "Opponent Scores",
+                                language.multiplayer.score_subtitles[1].clone(),
                                 TextStyle {
                                     font: image_handler.2.get(1).unwrap().clone(),
                                     font_size: 60.0,
@@ -619,7 +810,7 @@ fn init_view(
         .insert(MultiplayerView)
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "Go Back",
+                language.multiplayer.go_back_button.clone(),
                 TextStyle {
                     font: image_handler.2.get(0).unwrap().clone(),
                     font_size: 30.0,
@@ -628,6 +819,61 @@ fn init_view(
             ));
         })
         .insert(GoBackButton);
+}
+
+fn cond_to_redraw_channel_selection(network_res: Res<NetworkResource>) -> ShouldRun {
+    if network_res.connection_status == ConnectionStatus::None {
+        ShouldRun::Yes
+    } else {
+        ShouldRun::No
+    }
+}
+
+fn redraw_channel_selection(
+    network_res: Res<NetworkResource>,
+    mut text_panels: Query<(&mut Text, &ChannelText), With<ChannelText>>,
+) {
+    for (mut text, channel_id) in &mut text_panels {
+        text.sections[0].value = network_res.ip[channel_id.id as usize].to_string()
+    }
+}
+
+fn switch_channel_buttons(
+    mut network_res: ResMut<NetworkResource>,
+    mut buttons: Query<
+        (&Interaction, &mut BackgroundColor, &SwitchChannel),
+        (Changed<Interaction>, With<Button>, With<SwitchChannel>),
+    >,
+) {
+    for (interaction, mut back_color, button_id) in &mut buttons {
+        match *interaction {
+            Interaction::Clicked => {
+                *back_color = BackgroundColor(Color::YELLOW);
+                match *button_id {
+                    SwitchChannel::Back { id } => {
+                        if network_res.ip[id as usize] == 0 {
+                            network_res.ip[id as usize] = 225
+                        } else {
+                            network_res.ip[id as usize] -= 1;
+                        }
+                    }
+                    SwitchChannel::Forward { id } => {
+                        if network_res.ip[id as usize] == 225 {
+                            network_res.ip[id as usize] = 0
+                        } else {
+                            network_res.ip[id as usize] += 1;
+                        }
+                    }
+                }
+            }
+            Interaction::Hovered => {
+                *back_color = BackgroundColor(Color::AQUAMARINE);
+            }
+            Interaction::None => {
+                *back_color = BackgroundColor(Color::BEIGE);
+            }
+        }
+    }
 }
 
 fn back_to_main_menu(
@@ -642,53 +888,6 @@ fn back_to_main_menu(
             Interaction::Clicked => {
                 *back_color = BackgroundColor(Color::YELLOW);
                 game_state.set(GameState::MainMenu).unwrap();
-            }
-            Interaction::Hovered => {
-                *back_color = BackgroundColor(Color::AQUAMARINE);
-            }
-            Interaction::None => {
-                *back_color = BackgroundColor(Color::BEIGE);
-            }
-        }
-    }
-}
-
-fn change_channel(
-    mut interaction_query: Query<
-        (&Interaction, &SwitchChannel, &mut BackgroundColor),
-        (Changed<Interaction>, With<Button>, With<SwitchChannel>),
-    >,
-    mut network_res: ResMut<NetworkResource>,
-    mut channel_text: Query<&mut Text, With<ChannelText>>,
-) {
-    for (interaction, direction, mut back_color) in &mut interaction_query {
-        match *interaction {
-            Interaction::Clicked => {
-                match *direction {
-                    SwitchChannel::Back => {
-                        let num_of_ports = network_res.ports.len() as i32;
-                        let new_selected_port = (network_res.selected_port_ind - 1) % num_of_ports;
-                        if new_selected_port < 0 {
-                            network_res.selected_port_ind = num_of_ports - 1;
-                        } else {
-                            network_res.selected_port_ind = new_selected_port;
-                        }
-                        for mut text in &mut channel_text {
-                            text.sections[0].value =
-                                format!("Channel {}", (network_res.selected_port_ind + 1));
-                        }
-                    }
-                    SwitchChannel::Forward => {
-                        let num_of_ports = network_res.ports.len() as i32;
-                        let new_selected_port = (network_res.selected_port_ind + 1) % num_of_ports;
-                        network_res.selected_port_ind = new_selected_port;
-                        for mut text in &mut channel_text {
-                            text.sections[0].value =
-                                format!("Channel {}", (network_res.selected_port_ind + 1));
-                        }
-                    }
-                }
-                *back_color = BackgroundColor(Color::YELLOW);
             }
             Interaction::Hovered => {
                 *back_color = BackgroundColor(Color::AQUAMARINE);
@@ -718,8 +917,8 @@ fn choose_network_option(
                         server
                             .start_endpoint(
                                 ServerConfigurationData::new(
-                                    network_res.ip.to_string(),
-                                    network_res.ports[network_res.selected_port_ind as usize],
+                                    "0.0.0.0".to_string(),
+                                    225,
                                     "0.0.0.0".to_string(),
                                 ),
                                 CertificateRetrievalMode::GenerateSelfSigned,
@@ -731,10 +930,16 @@ fn choose_network_option(
                         client
                             .open_connection(
                                 ConnectionConfiguration::new(
-                                    network_res.ip.to_string(),
-                                    network_res.ports[network_res.selected_port_ind as usize],
+                                    format!(
+                                        "{}.{}.{}.{}",
+                                        network_res.ip[0],
+                                        network_res.ip[1],
+                                        network_res.ip[2],
+                                        network_res.ip[3]
+                                    ),
+                                    225,
                                     "0.0.0.0".to_string(),
-                                    249,
+                                    0,
                                 ),
                                 CertificateVerificationMode::SkipVerification,
                             )
@@ -797,6 +1002,7 @@ fn connect_to_client(
     mut level_selection_panel: Query<&mut Style, With<LevelPanel>>,
     mut db_conn: ResMut<DatabaseConnection>,
     mut event_sender: EventWriter<SendLevelDataToClient>,
+    language: Res<LanguageResource>,
 ) {
     let endpoint = server.endpoint_mut();
     match endpoint.clients().len() {
@@ -808,7 +1014,7 @@ fn connect_to_client(
                     .expect("The id of the first client should be saved"),
             };
             for mut text in &mut status_text {
-                text.sections[0].value = "Connected".to_string();
+                text.sections[0].value = language.multiplayer.connect_status[1].clone();
                 text.sections[0].style.color = Color::GREEN;
             }
             for mut style in &mut level_selection_panel {
@@ -862,11 +1068,12 @@ fn connect_to_server(
         ),
     >,
     mut network_res: ResMut<NetworkResource>,
+    language: Res<LanguageResource>,
 ) {
     if client.get_connection().is_some() {
         network_res.connection_status = ConnectionStatus::Connected { client_id: 0 };
         for mut text in &mut status_text {
-            text.sections[0].value = "Connected".to_string();
+            text.sections[0].value = language.multiplayer.connect_status[1].clone();
             text.sections[0].style.color = Color::GREEN;
         }
     }
@@ -973,29 +1180,32 @@ fn update_score_view(
     network_res: Res<NetworkResource>,
     mut my_score_text: Query<&mut Text, (With<MyScoreText>, Without<OpponentScoreText>)>,
     mut opponent_score_text: Query<&mut Text, (With<OpponentScoreText>, Without<MyScoreText>)>,
+    language: Res<LanguageResource>,
 ) {
     if network_res.my_game_score.completed {
         for mut text in &mut my_score_text {
             text.sections[0].value = format!(
-                "Number of steps: {}",
+                "{}: {}",
+                language.multiplayer.num_of_steps.clone(),
                 network_res.my_game_score.num_of_steps
             );
         }
     } else {
         for mut text in &mut my_score_text {
-            text.sections[0].value = "Number of steps: N/A".to_string();
+            text.sections[0].value = format!("{}: N/A", language.multiplayer.num_of_steps.clone());
         }
     }
     if network_res.opponent_game_score.completed {
         for mut text in &mut opponent_score_text {
             text.sections[0].value = format!(
-                "Number of steps: {}",
+                "{}: {}",
+                language.multiplayer.num_of_steps.clone(),
                 network_res.opponent_game_score.num_of_steps
             );
         }
     } else {
         for mut text in &mut opponent_score_text {
-            text.sections[0].value = "Number of steps: N/A".to_string();
+            text.sections[0].value = format!("{}: N/A", language.multiplayer.num_of_steps.clone());
         }
     }
 }
@@ -1004,6 +1214,7 @@ fn update_connection_status_view(
     network_res: Res<NetworkResource>,
     mut connection_status_panel: Query<&mut Text, With<ConnectionStatusPanel>>,
     mut level_panel: Query<&mut Style, With<LevelPanel>>,
+    language: Res<LanguageResource>,
 ) {
     let connected = matches!(
         network_res.connection_status,
@@ -1013,9 +1224,17 @@ fn update_connection_status_view(
     let is_server = network_res.connection_type == ConnectionType::Server;
     for mut text in &mut connection_status_panel {
         text.sections[0].value = if connected {
-            "Connected".to_string()
+            language.multiplayer.connect_status[1].clone()
         } else if waiting {
-            "Connecting".to_string()
+            if is_server {
+                format!(
+                    "{} at: {}",
+                    language.multiplayer.connect_status[0].clone(),
+                    local_ip().unwrap()
+                )
+            } else {
+                language.multiplayer.connect_status[1].clone()
+            }
         } else {
             "".to_string()
         };

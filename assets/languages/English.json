@@ -52,5 +52,16 @@
     "challenge_scores_title": "Challenge mode",
     "multiplayer_scores_title": "Multiplayer mode",
     "go_back_button": "Go Back"
+  },
+  "multiplayer": {
+    "title": "Multiplayer",
+    "host_button": "Host",
+    "connect_button": "Connect to",
+    "connect_status": ["waiting", "connected"],
+    "start_button": "Start game",
+    "score_title": "Scores",
+    "score_subtitles": ["My Score", "Opponent Score"],
+    "num_of_steps": "Number of steps",
+    "go_back_button": "Go Back"
   }
 }
