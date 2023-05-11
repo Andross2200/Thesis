@@ -66,7 +66,7 @@ pub struct MultilayerText {
     pub score_title: String,
     pub score_subtitles: Vec<String>,
     pub num_of_steps: String,
-    pub go_back_button: String
+    pub go_back_button: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Resource)]
@@ -75,7 +75,7 @@ pub struct LanguageResource {
     pub level_selector: LevelSelector,
     pub game: GameText,
     pub scoreboard: ScoreboardText,
-    pub multiplayer: MultilayerText
+    pub multiplayer: MultilayerText,
 }
 pub struct LanguagePlugin;
 

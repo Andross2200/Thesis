@@ -28,11 +28,12 @@ use crate::{
             get_challenge_fen_at_ind, get_next_challenge_fen, get_prev_challenge_fen,
             DatabaseConnection,
         },
+        language_plugin::LanguageResource,
         network_plugin::{
             ConnectionStatus, ConnectionType, GameStage, NetworkResource, SelectedLevelData,
             SendLevelDataToClient, SendStartSignalToClient,
         },
-        script_plugin::ScriptRes, language_plugin::LanguageResource,
+        script_plugin::ScriptRes,
     },
     view::{despawn_screen, image_handler::ImageMap, GameState},
 };
@@ -137,7 +138,7 @@ fn init_view(
     mut commands: Commands,
     image_handler: Res<ImageMap>,
     network_res: Res<NetworkResource>,
-    language: Res<LanguageResource>
+    language: Res<LanguageResource>,
 ) {
     commands
         .spawn(NodeBundle {
@@ -853,14 +854,14 @@ fn switch_channel_buttons(
                         if network_res.ip[id as usize] == 0 {
                             network_res.ip[id as usize] = 225
                         } else {
-                            network_res.ip[id as usize] = network_res.ip[id as usize] - 1;
+                            network_res.ip[id as usize] -= 1;
                         }
                     }
                     SwitchChannel::Forward { id } => {
                         if network_res.ip[id as usize] == 225 {
                             network_res.ip[id as usize] = 0
                         } else {
-                            network_res.ip[id as usize] = network_res.ip[id as usize] + 1;
+                            network_res.ip[id as usize] += 1;
                         }
                     }
                 }
@@ -1001,7 +1002,7 @@ fn connect_to_client(
     mut level_selection_panel: Query<&mut Style, With<LevelPanel>>,
     mut db_conn: ResMut<DatabaseConnection>,
     mut event_sender: EventWriter<SendLevelDataToClient>,
-    language: Res<LanguageResource>
+    language: Res<LanguageResource>,
 ) {
     let endpoint = server.endpoint_mut();
     match endpoint.clients().len() {
@@ -1067,7 +1068,7 @@ fn connect_to_server(
         ),
     >,
     mut network_res: ResMut<NetworkResource>,
-    language: Res<LanguageResource>
+    language: Res<LanguageResource>,
 ) {
     if client.get_connection().is_some() {
         network_res.connection_status = ConnectionStatus::Connected { client_id: 0 };
@@ -1179,12 +1180,13 @@ fn update_score_view(
     network_res: Res<NetworkResource>,
     mut my_score_text: Query<&mut Text, (With<MyScoreText>, Without<OpponentScoreText>)>,
     mut opponent_score_text: Query<&mut Text, (With<OpponentScoreText>, Without<MyScoreText>)>,
-    language: Res<LanguageResource>
+    language: Res<LanguageResource>,
 ) {
     if network_res.my_game_score.completed {
         for mut text in &mut my_score_text {
             text.sections[0].value = format!(
-                "{}: {}", language.multiplayer.num_of_steps.clone(),
+                "{}: {}",
+                language.multiplayer.num_of_steps.clone(),
                 network_res.my_game_score.num_of_steps
             );
         }
@@ -1196,7 +1198,8 @@ fn update_score_view(
     if network_res.opponent_game_score.completed {
         for mut text in &mut opponent_score_text {
             text.sections[0].value = format!(
-                "{}: {}", language.multiplayer.num_of_steps.clone(),
+                "{}: {}",
+                language.multiplayer.num_of_steps.clone(),
                 network_res.opponent_game_score.num_of_steps
             );
         }
@@ -1211,7 +1214,7 @@ fn update_connection_status_view(
     network_res: Res<NetworkResource>,
     mut connection_status_panel: Query<&mut Text, With<ConnectionStatusPanel>>,
     mut level_panel: Query<&mut Style, With<LevelPanel>>,
-    language: Res<LanguageResource>
+    language: Res<LanguageResource>,
 ) {
     let connected = matches!(
         network_res.connection_status,
@@ -1224,7 +1227,11 @@ fn update_connection_status_view(
             language.multiplayer.connect_status[1].clone()
         } else if waiting {
             if is_server {
-                format!("{} at: {}", language.multiplayer.connect_status[0].clone(), local_ip().unwrap())
+                format!(
+                    "{} at: {}",
+                    language.multiplayer.connect_status[0].clone(),
+                    local_ip().unwrap()
+                )
             } else {
                 language.multiplayer.connect_status[1].clone()
             }

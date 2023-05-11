@@ -17,7 +17,8 @@ use bevy::{
 use crate::{
     utilities::{
         database_plugin::{
-            get_best_ten_challenge_scores_for_player, ConfigResource, DatabaseConnection, get_best_ten_multiplayer_scores_for_player,
+            get_best_ten_challenge_scores_for_player, get_best_ten_multiplayer_scores_for_player,
+            ConfigResource, DatabaseConnection,
         },
         language_plugin::LanguageResource,
     },
@@ -292,7 +293,7 @@ fn init_view(
         })
         .id();
 
-        commands.entity(main_panel).add_child(multiplayer_scores);
+    commands.entity(main_panel).add_child(multiplayer_scores);
 
     commands
         .spawn(ButtonBundle {

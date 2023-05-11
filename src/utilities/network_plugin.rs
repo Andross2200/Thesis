@@ -1,7 +1,4 @@
-use std::{
-    thread::sleep,
-    time::Duration,
-};
+use std::{thread::sleep, time::Duration};
 
 use bevy::{
     ecs::schedule::ShouldRun,
@@ -120,7 +117,7 @@ pub struct NetworkResource {
 impl Default for NetworkResource {
     fn default() -> Self {
         NetworkResource {
-            ip: vec![127,0,0,1],
+            ip: vec![127, 0, 0, 1],
             selected_port_ind: 0,
             connection_type: ConnectionType::None,
             connection_status: ConnectionStatus::None,
