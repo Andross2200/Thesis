@@ -3,6 +3,8 @@ use std::env;
 use bevy::prelude::*;
 
 mod model;
+#[cfg(test)]
+mod tests;
 mod utilities;
 mod view;
 
