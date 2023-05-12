@@ -69,7 +69,7 @@ impl Plugin for DatabasePlugin {
 }
 
 fn connect_to_db(mut commands: Commands) {
-    let url = "mysql://root:root1234@localhost:3306/thesis";
+    let url = "mysql://root:rooT1234@thesis%2Ddatabase.mysql.database.azure.com:3306/thesis";
     let opts = Opts::from_url(url).expect("Databse url is incorrect");
     let pool = Pool::new(opts).expect("Databse url is incorrect");
     let conn = pool.get_conn().expect("There must be a connection");
