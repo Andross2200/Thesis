@@ -423,7 +423,7 @@ fn init_view(
                                         image: image_handler.1.get(6).unwrap().clone(),
                                         ..Default::default()
                                     })
-                                    .insert(SwitchChannel::Back { id: 4 });
+                                    .insert(SwitchChannel::Back { id: 3 });
                             });
                         });
 
