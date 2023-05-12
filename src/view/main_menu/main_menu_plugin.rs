@@ -69,8 +69,9 @@ impl Plugin for MainMenuPlugin {
 fn init_setup(
     mut commands: Commands,
     image_handler: Res<ImageMap>,
-    config: Res<ConfigResource>,
+    mut config: ResMut<ConfigResource>,
     language: Res<LanguageResource>,
+    mut db_conn: ResMut<DatabaseConnection>,
 ) {
     commands
         .spawn(NodeBundle {
@@ -285,6 +286,10 @@ fn init_setup(
                     })
                     .insert(MenuButtonAction::LanguageForward);
                 });
+
+            if config.local_players.is_empty() {
+                create_new_player(&mut db_conn, &mut config);
+            }
 
             // Change player panel
             parent
