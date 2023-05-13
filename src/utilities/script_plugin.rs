@@ -11,12 +11,7 @@ use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
 use crate::{
     model::game_model::game::Game,
-    view::{
-        game_view::level_view::{
-            CellCollider, CellMovable, GreenPawn, OrangePawn, Perl, ShellType,
-        },
-        image_handler::ImageMap,
-    },
+    view::game_view::level_view::{CellCollider, CellMovable, GreenPawn, OrangePawn, Perl},
     MAX_LEVEL_HEIGHT, MAX_LEVEL_WIDTH,
 };
 use crate::{model::game_model::game::GameCompleted, view::game_view::level_view::ScoreText};
@@ -24,7 +19,7 @@ use crate::{SHIFT_DOWN, SHIFT_TO_RIGHT};
 
 const TIMESTEP_1_PER_SECOND: f64 = 1.0;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum ScriptRunStatus {
     Stopped,
     Running,
@@ -204,7 +199,7 @@ pub fn run_script(
                         walls.borrow_mut(),
                         image_size,
                     ) {
-                        move_pawn(green_pawn, Direction::Right, image_size);
+                        move_pawn(green_pawn, direction, image_size);
                         game.solution_steps += 1;
                     } else {
                         reset_level(&mut script_res, &mut game);
@@ -354,7 +349,7 @@ pub fn reset_level(script_res: &mut ResMut<ScriptRes>, game: &mut ResMut<Game>) 
     game.solution_steps = 0;
 }
 
-fn move_pawn(mut pawn: Mut<Style>, direction: Direction, image_size: f32) {
+pub fn move_pawn(mut pawn: Mut<Style>, direction: Direction, image_size: f32) {
     let old_pos = pawn.position;
     match direction {
         Direction::Up => {
@@ -388,7 +383,7 @@ fn move_pawn(mut pawn: Mut<Style>, direction: Direction, image_size: f32) {
     }
 }
 
-fn check_location(
+pub fn check_location(
     pawn: &Mut<Style>,
     direction: &Direction,
     walls: &mut Query<
@@ -453,7 +448,7 @@ fn check_location(
     false
 }
 
-fn reset_images_cond(script_res: ResMut<ScriptRes>) -> ShouldRun {
+pub fn reset_images_cond(script_res: ResMut<ScriptRes>) -> ShouldRun {
     if script_res.run_status == ScriptRunStatus::Reset {
         ShouldRun::Yes
     } else {
@@ -462,7 +457,7 @@ fn reset_images_cond(script_res: ResMut<ScriptRes>) -> ShouldRun {
 }
 
 #[allow(unused_assignments)]
-fn reset_images(
+pub fn reset_images(
     game: Res<Game>,
     mut gpawn: Query<
         &mut Style,
@@ -482,19 +477,7 @@ fn reset_images(
             Without<GreenPawn>,
         ),
     >,
-    mut movable_stones: Query<
-        (&mut Style, Entity),
-        (
-            With<CellMovable>,
-            Without<CellCollider>,
-            Without<Perl>,
-            Without<GreenPawn>,
-            Without<OrangePawn>,
-        ),
-    >,
     mut perls: Query<(&mut Style, &Perl), With<Perl>>,
-    mut shells_images: Query<(&mut UiImage, &ShellType), With<ShellType>>,
-    image_handler: Res<ImageMap>,
     mut script_res: ResMut<ScriptRes>,
 ) {
     let image_size = min(
@@ -507,33 +490,12 @@ fn reset_images(
             perl_style.display = Display::Flex;
         }
     }
-    for (mut shell_image, mut shell_type) in &mut shells_images {
-        if *shell_type == ShellType::Open {
-            shell_type = &ShellType::Closed;
-            shell_image.0 = image_handler.0.get("o").unwrap().0.clone();
-        }
-    }
     for i in 0..game.rows {
         for j in 0..game.columns {
             let cell_data = game
                 .level_matrix
                 .get(i.try_into().unwrap(), j.try_into().unwrap())
                 .unwrap();
-            if "XV".to_string().contains(cell_data.letter) {
-                for (mut stone_style, stone_entity) in &mut movable_stones {
-                    if cell_data.cell_entity.unwrap().eq(&stone_entity) {
-                        stone_style.position = UiRect {
-                            left: Val::Px(
-                                image_size * (j) as f32 + cell_data.extra_move_x + SHIFT_TO_RIGHT,
-                            ),
-                            top: Val::Px(
-                                image_size * (i) as f32 + cell_data.extra_move_y + SHIFT_DOWN,
-                            ),
-                            ..Default::default()
-                        };
-                    }
-                }
-            }
             if "p".to_string().contains(cell_data.letter) {
                 gpawn.get_single_mut().unwrap().position = UiRect {
                     left: Val::Px(
@@ -557,7 +519,7 @@ fn reset_images(
     script_res.run_status = ScriptRunStatus::Stopped;
 }
 
-fn get_perl_at_pawn(
+pub fn get_perl_at_pawn(
     pawn: &Mut<Style>,
     perls: &mut Query<(&mut Style, &mut Perl), With<Perl>>,
     game: &mut ResMut<Game>,
