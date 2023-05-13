@@ -77,7 +77,7 @@ fn connect_to_db(mut commands: Commands) {
 }
 
 pub fn get_all_levels_for_player(
-    mut db_conn: ResMut<DatabaseConnection>,
+    db_conn: &mut DatabaseConnection,
     player_id: i32,
 ) -> Vec<AllLevelsWithSolutions> {
     let solved_levels_query = format!(
@@ -130,7 +130,7 @@ pub fn get_all_levels_for_player(
 }
 
 pub fn update_score_for_tutorial_level(
-    db_conn: &mut ResMut<DatabaseConnection>,
+    db_conn: &mut DatabaseConnection,
     player_id: i32,
     level_id: i32,
     steps: i32,
@@ -173,7 +173,7 @@ pub fn update_score_for_tutorial_level(
         let prev_result: Option<i32> = transaction
             .query_first(get_score_query)
             .expect("Previous score should be in databse");
-        if prev_result.unwrap() > steps {
+        if prev_result.unwrap() < steps {
             transaction
                 .query_drop(update_query)
                 .expect("Query must be successful");
@@ -184,7 +184,7 @@ pub fn update_score_for_tutorial_level(
         .expect("Transaction for getting all levels must be commited");
 }
 
-pub fn get_random_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> (i32, String) {
+pub fn get_random_challenge_fen(db_conn: &mut DatabaseConnection) -> (i32, String) {
     let prefabs = db_conn
         .conn
         .query_map(
@@ -204,7 +204,7 @@ pub fn get_random_challenge_fen(db_conn: &mut ResMut<DatabaseConnection>) -> (i3
     )
 }
 
-fn make_fen_from_prefab(prefab: String) -> String {
+pub fn make_fen_from_prefab(prefab: String) -> String {
     let mut random = rand::thread_rng();
     let mut pawn_probability = 0.4;
     let mut perl_probability = 0.5;
@@ -258,7 +258,7 @@ fn make_fen_from_prefab(prefab: String) -> String {
 }
 
 pub fn save_challenge_result(
-    db_conn: &mut ResMut<DatabaseConnection>,
+    db_conn: &mut DatabaseConnection,
     player_id: i32,
     fen: String,
     num_of_steps: i32,
@@ -283,10 +283,7 @@ pub fn save_challenge_result(
         .expect("Transaction for getting all levels must be commited");
 }
 
-pub fn create_new_player(
-    db_conn: &mut ResMut<DatabaseConnection>,
-    config: &mut ResMut<ConfigResource>,
-) {
+pub fn create_new_player(db_conn: &mut DatabaseConnection, config: &mut ConfigResource) {
     let all_players_query = "SELECT player_name FROM players;".to_string();
     let mut transaction = db_conn
         .conn
@@ -348,7 +345,7 @@ pub fn update_cofig_file(config: &mut ConfigResource) {
 }
 
 pub fn get_best_ten_challenge_scores_for_player(
-    db_conn: &mut ResMut<DatabaseConnection>,
+    db_conn: &mut DatabaseConnection,
     player_id: i32,
 ) -> Vec<ChallengeScore> {
     let query = format!(
@@ -383,7 +380,7 @@ pub fn get_best_ten_challenge_scores_for_player(
 }
 
 pub fn get_challenge_fen_at_ind(
-    db_conn: &mut ResMut<DatabaseConnection>,
+    db_conn: &mut DatabaseConnection,
     ind: i32,
 ) -> (i32, String, String) {
     let mut transaction = db_conn
@@ -411,7 +408,7 @@ pub fn get_challenge_fen_at_ind(
 }
 
 pub fn get_next_challenge_fen(
-    db_conn: &mut ResMut<DatabaseConnection>,
+    db_conn: &mut DatabaseConnection,
     ind: i32,
 ) -> (i32, i32, String, String) {
     let mut transaction = db_conn
@@ -438,14 +435,14 @@ pub fn get_next_challenge_fen(
     };
     (
         next_ind,
-        prefabs.get(ind as usize).unwrap().prefab_id,
-        make_fen_from_prefab(prefabs.get(ind as usize).unwrap().fen.clone()),
-        prefabs.get(ind as usize).unwrap().level_name.clone(),
+        prefabs.get(next_ind as usize).unwrap().prefab_id,
+        make_fen_from_prefab(prefabs.get(next_ind as usize).unwrap().fen.clone()),
+        prefabs.get(next_ind as usize).unwrap().level_name.clone(),
     )
 }
 
 pub fn get_prev_challenge_fen(
-    db_conn: &mut ResMut<DatabaseConnection>,
+    db_conn: &mut DatabaseConnection,
     ind: i32,
 ) -> (i32, i32, String, String) {
     let mut transaction = db_conn
@@ -472,14 +469,14 @@ pub fn get_prev_challenge_fen(
     };
     (
         prev_ind,
-        prefabs.get(ind as usize).unwrap().prefab_id,
-        make_fen_from_prefab(prefabs.get(ind as usize).unwrap().fen.clone()),
-        prefabs.get(ind as usize).unwrap().level_name.clone(),
+        prefabs.get(prev_ind as usize).unwrap().prefab_id,
+        make_fen_from_prefab(prefabs.get(prev_ind as usize).unwrap().fen.clone()),
+        prefabs.get(prev_ind as usize).unwrap().level_name.clone(),
     )
 }
 
 pub fn save_multiplayer_result(
-    db_conn: &mut ResMut<DatabaseConnection>,
+    db_conn: &mut DatabaseConnection,
     player_id: i32,
     fen: String,
     num_of_steps: i32,
@@ -505,7 +502,7 @@ pub fn save_multiplayer_result(
 }
 
 pub fn get_best_ten_multiplayer_scores_for_player(
-    db_conn: &mut ResMut<DatabaseConnection>,
+    db_conn: &mut DatabaseConnection,
     player_id: i32,
 ) -> Vec<ChallengeScore> {
     let query = format!(

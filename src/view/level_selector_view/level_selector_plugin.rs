@@ -95,7 +95,7 @@ fn init_view(
     level_selector_data.init_left_shift = init_left_shift;
     level_selector_data.space_between_rows = space_between_rows;
     level_selector_data.all_levels = get_all_levels_for_player(
-        db_conn,
+        db_conn.into_inner(),
         config
             .local_players
             .get(config.selected_player_id as usize)
