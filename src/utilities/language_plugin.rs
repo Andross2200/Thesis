@@ -85,7 +85,7 @@ impl Plugin for LanguagePlugin {
     }
 }
 
-fn setup_language(mut commands: Commands, config: Res<ConfigResource>) {
+pub fn setup_language(mut commands: Commands, config: Res<ConfigResource>) {
     let language_file_path = LANGUAGE_FILE_FOLDER.to_string()
         + &config.languages[config.selected_language as usize]
         + ".json";
