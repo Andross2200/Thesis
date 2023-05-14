@@ -16,7 +16,7 @@ pub enum GameCompleted {
     No,
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq, Debug)]
 pub struct LevelCell {
     pub letter: char,
     pub angle: f32,
@@ -446,8 +446,8 @@ impl Game {
                             cell = create_level_cell(c, 0.0, image_size, image_size, 0.0, 0.0);
                         }
                         _ => {
-                            error!("empty cell");
-                            continue;
+                            error!("Invalid cell");
+                            panic!("Invalid cell");
                         }
                     }
                     matrix.set(i.try_into().unwrap(), col_counter.try_into().unwrap(), cell);
@@ -459,6 +459,8 @@ impl Game {
                         matrix.set(i.try_into().unwrap(), col_counter.try_into().unwrap(), cell);
                         col_counter += 1;
                     }
+                } else {
+                    panic!("Invalid character")
                 }
             }
         }
@@ -481,7 +483,7 @@ impl Game {
     }
 }
 
-fn create_level_cell(
+pub fn create_level_cell(
     letter: char,
     angle: f32,
     image_size_x: f32,
